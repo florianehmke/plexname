@@ -2,10 +2,13 @@
 package tvdb
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
+	"net/http"
 	"time"
 
-	"github.com/dghubble/sling"
+	"github.com/florianehmke/plexname/config"
 	"github.com/florianehmke/plexname/log"
 )
 
@@ -13,7 +16,7 @@ const BaseURL = "https://api.thetvdb.com/"
 
 // Service is the TVDB service struct.
 type Service struct {
-	base *sling.Sling
+	client *http.Client
 
 	apiKey string
 
@@ -27,58 +30,73 @@ type token struct {
 
 type authRequestBody struct {
 	Apikey string `json:"apikey"`
-	// not used..
-	Userkey  string `json:"userkey"`
-	Username string `json:"username"`
 }
 
 type apiError struct {
 	Error string `json:"Error"`
 }
 
-func (e apiError) isPresent() bool {
-	// Check if an empty error equals e
-	return (apiError{}) != e
-}
-
 // New creates a new TMDB service.
 func NewService(baseURL string, apiKey string) *Service {
 	tvdbService := &Service{
 		apiKey: apiKey,
-		base:   sling.New().Base(baseURL),
+		client: &http.Client{},
 	}
 	return tvdbService
 }
 
 // authenticate at TVDB.
 func (s *Service) authenticate() error {
-	tok := new(token)
-	apiErr := new(apiError)
-	body := authRequestBody{Apikey: s.apiKey}
-	if _, err := s.base.New().Post("/login").BodyJSON(body).Receive(tok, apiErr); err != nil {
-		return fmt.Errorf("tvdb authentication request failed: %v", err)
+	body, err := json.Marshal(authRequestBody{Apikey: config.GetToken("tvdb")})
+	if err != nil {
+		return fmt.Errorf("could not marshal auth request body: %v", err)
 	}
-	if apiErr.isPresent() {
+	resp, err := http.Post(BaseURL+"login", "application/json", bytes.NewBuffer(body))
+	if err != nil {
+		return fmt.Errorf("could not post auth request: %v", err)
+	}
+	defer resp.Body.Close()
+	if code := resp.StatusCode; 200 <= code && code <= 299 {
+		if err := json.NewDecoder(resp.Body).Decode(&s.token); err != nil {
+			return fmt.Errorf("could not unmarshal auth response: %v", err)
+		}
+	} else {
+		var apiErr apiError
+		if err := json.NewDecoder(resp.Body).Decode(&apiErr); err != nil {
+			return fmt.Errorf("could not unmarshal auth error response: %v", err)
+		}
 		return fmt.Errorf("tvdb authentication failed: %s", apiErr.Error)
 	}
-	s.token = *tok
-	s.tokenFromDate = time.Now()
-	s.base.Set("Authorization", fmt.Sprintf("Bearer %s", s.token.JWTToken))
 	log.Infof("Received tvdb token: %s...", s.token.JWTToken[:10])
 	return nil
 }
 
 // refreshToken at TVDB.
 func (s *Service) refreshToken() error {
-	tok := new(token)
-	apiErr := new(apiError)
-	if _, err := s.base.New().Get("/login").Receive(tok, apiErr); err != nil {
-		return fmt.Errorf("tvdb authentication request failed: %v", err)
+	req, err := http.NewRequest("GET", BaseURL+"login", nil)
+	if err != nil {
+		return fmt.Errorf("could not create refresh token request: %v", err)
 	}
-	if apiErr.isPresent() {
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", s.token.JWTToken))
+
+	resp, err := s.client.Do(req)
+	if err != nil {
+		return fmt.Errorf("coult not do refresh token request: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if code := resp.StatusCode; 200 <= code && code <= 299 {
+		if err := json.NewDecoder(resp.Body).Decode(&s.token); err != nil {
+			return fmt.Errorf("could not unmarshal auth response: %v", err)
+		}
+	} else {
+		var apiErr apiError
+		if err := json.NewDecoder(resp.Body).Decode(&apiErr); err != nil {
+			return fmt.Errorf("could not unmarshal auth error response: %v", err)
+		}
 		return fmt.Errorf("tvdb authentication failed: %s", apiErr.Error)
 	}
-	s.base.Set("Authorization", fmt.Sprintf("Bearer %s", s.token.JWTToken))
+	log.Infof("Refreshed tvdb token: %s...", s.token.JWTToken[:10])
 	return nil
 }
 
