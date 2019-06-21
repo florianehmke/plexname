@@ -3,17 +3,13 @@ package tmdb
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
-	"errors"
 )
 
-const (
-	BaseURL        = "https://api.themoviedb.org/3"
-	searchEndpoint = "/search/%s?api_key=%s&language=en-US"
-	movieEndpoint  = "/movie/%d?api_key=%s&language=en-US"
-)
+const BaseURL = "https://api.themoviedb.org/3"
 
 // Service is the TMDB service struct.
 type Service struct {
@@ -59,14 +55,17 @@ type apiError struct {
 	StatusCode    int    `json:"status_code"`
 }
 
-func hasError(resp *http.Response, body []byte) error {
-	if resp.StatusCode != http.StatusOK {
-		var error apiError
-		err := json.Unmarshal(body, &error)
-		if err != nil {
-			return fmt.Errorf("could not unmarshal error response: %v", err)
+func unmarshalResponse(resp *http.Response, success interface{}) error {
+	if code := resp.StatusCode; 200 <= code && code <= 299 {
+		if success != nil && resp.StatusCode != 204 {
+			return json.NewDecoder(resp.Body).Decode(success)
 		}
-		return errors.New(error.StatusMessage)
+	} else {
+		var apiErr apiError
+		if err := json.NewDecoder(resp.Body).Decode(&apiErr); err != nil {
+			return fmt.Errorf("unmarshal of response failed: %v", err)
+		}
+		return errors.New(fmt.Sprintf("%s (code %d)", apiErr.StatusMessage, apiErr.StatusCode))
 	}
 	return nil
 }

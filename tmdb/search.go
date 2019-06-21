@@ -1,32 +1,20 @@
 package tmdb
 
 import (
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strconv"
 )
 
+const searchEndpoint = "/search/%s?api_key=%s&language=en-US"
+
 // SearchResponse from TMDB.
 type SearchResponse struct {
 	Page    int `json:"page"`
 	Results []struct {
-		PosterPath       string  `json:"poster_path"`
-		Adult            bool    `json:"adult"`
-		Plot             string  `json:"overview"`
-		ReleaseDate      string  `json:"release_date"`
-		GenreIds         []int   `json:"genre_ids"`
-		ID               int     `json:"id"`
-		OriginalTitle    string  `json:"original_title"`
-		OriginalLanguage string  `json:"original_language"`
-		Title            string  `json:"title"`
-		BackdropPath     string  `json:"backdrop_path"`
-		Popularity       float64 `json:"popularity"`
-		VoteCount        int     `json:"vote_count"`
-		Video            bool    `json:"video"`
-		VoteAverage      float64 `json:"vote_average"`
+		ReleaseDate string `json:"release_date"`
+		Title       string `json:"title"`
 	} `json:"results"`
 	TotalResults int `json:"total_results"`
 	TotalPages   int `json:"total_pages"`
@@ -58,22 +46,9 @@ func (s *Service) Search(query string, year int, page int) (*SearchResponse, err
 	}
 	defer resp.Body.Close()
 
-	b, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("could not read tmdb details response", err)
-	}
-
-	// Check for error.
-	err = hasError(resp, b)
-	if err != nil {
-		return nil, err
-	}
-
-	// Unmarshal success response.
 	var result SearchResponse
-	err = json.Unmarshal(b, &result)
-	if err != nil {
-		return nil, fmt.Errorf("could not unmarshal details response", err)
+	if err := unmarshalResponse(resp, &result); err != nil {
+		return nil, fmt.Errorf("unmarshal of response failed: %v", err)
 	}
 	return &result, nil
 }

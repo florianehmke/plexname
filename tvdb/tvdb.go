@@ -21,18 +21,6 @@ type Service struct {
 	tokenFromDate time.Time
 }
 
-type tokenResponse struct {
-	JWTToken string `json:"token"`
-}
-
-type authRequestBody struct {
-	Apikey string `json:"apikey"`
-}
-
-type apiError struct {
-	Error string `json:"Error"`
-}
-
 // New creates a new TMDB service.
 func NewService(baseURL string, apiKey string) *Service {
 	tvdbService := &Service{
@@ -46,6 +34,10 @@ func NewService(baseURL string, apiKey string) *Service {
 func (s *Service) addHeaders(req *http.Request) {
 	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", s.token.JWTToken))
 	req.Header.Add("Content-Type", "application/json")
+}
+
+type apiError struct {
+	Error string `json:"Error"`
 }
 
 func unmarshalResponse(resp *http.Response, success interface{}) error {

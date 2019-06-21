@@ -12,6 +12,14 @@ import (
 
 const authEndpoint = "login"
 
+type tokenResponse struct {
+	JWTToken string `json:"token"`
+}
+
+type authRequestBody struct {
+	Apikey string `json:"apikey"`
+}
+
 func (s *Service) requestInitialToken() error {
 	body, err := json.Marshal(authRequestBody{Apikey: config.GetToken("tvdb")})
 	if err != nil {
