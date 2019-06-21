@@ -1,13 +1,9 @@
 package tvdb
 
 import (
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/url"
-
-	"github.com/florianehmke/plexname/log"
 )
 
 const searchEndpoint = "search/series?name=%s"
@@ -23,35 +19,25 @@ type SearchResponse struct {
 func (s *Service) Search(query string) (*SearchResponse, error) {
 	err := s.refreshTokenIfNecessary()
 	if err != nil {
-		return nil, fmt.Errorf("failed to refresh jwt token: %v", err)
+		return nil, fmt.Errorf("jwt token refresh failed: %v", err)
 	}
 
-	req, err := http.NewRequest("GET", fmt.Sprintf(BaseURL+searchEndpoint, url.QueryEscape(query)), nil)
+	reqURL := fmt.Sprintf(BaseURL+searchEndpoint, url.QueryEscape(query))
+	req, err := http.NewRequest("GET", reqURL, nil)
 	if err != nil {
-		return nil, fmt.Errorf("could not create refresh token request: %v", err)
+		return nil, fmt.Errorf("creation of get request failed: %v", err)
 	}
-	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", s.token.JWTToken))
-	req.Header.Add("Content-Type", "application/json")
+	s.addHeaders(req)
 
 	resp, err := s.client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("coult not do refresh token request: %v", err)
+		return nil, fmt.Errorf("http get failed: %v", err)
 	}
 	defer resp.Body.Close()
 
 	var result SearchResponse
-	if code := resp.StatusCode; 200 <= code && code <= 299 {
-		if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-			return nil, fmt.Errorf("could not unmarshal auth response: %v", err)
-		}
-	} else {
-		var apiErr apiError
-		b, _ := ioutil.ReadAll(resp.Body)
-		log.Infof("%s", string(b))
-		if err := json.NewDecoder(resp.Body).Decode(&apiErr); err != nil {
-			return nil, fmt.Errorf("could not unmarshal auth error response: %v", err)
-		}
-		return nil, fmt.Errorf("tvdb authentication failed: %s", apiErr.Error)
+	if err := unmarshalResponse(resp, &result); err != nil {
+		return nil, fmt.Errorf("unmarshal of response failed: %v", err)
 	}
 	return &result, nil
 }

@@ -2,14 +2,11 @@
 package tvdb
 
 import (
-	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
-
-	"github.com/florianehmke/plexname/config"
-	"github.com/florianehmke/plexname/log"
 )
 
 const BaseURL = "https://api.thetvdb.com/"
@@ -20,11 +17,11 @@ type Service struct {
 
 	apiKey string
 
-	token         token
+	token         tokenResponse
 	tokenFromDate time.Time
 }
 
-type token struct {
+type tokenResponse struct {
 	JWTToken string `json:"token"`
 }
 
@@ -41,75 +38,27 @@ func NewService(baseURL string, apiKey string) *Service {
 	tvdbService := &Service{
 		apiKey: apiKey,
 		client: &http.Client{},
+		token:  tokenResponse{},
 	}
 	return tvdbService
 }
 
-// authenticate at TVDB.
-func (s *Service) authenticate() error {
-	body, err := json.Marshal(authRequestBody{Apikey: config.GetToken("tvdb")})
-	if err != nil {
-		return fmt.Errorf("could not marshal auth request body: %v", err)
-	}
-	resp, err := http.Post(BaseURL+"login", "application/json", bytes.NewBuffer(body))
-	if err != nil {
-		return fmt.Errorf("could not post auth request: %v", err)
-	}
-	defer resp.Body.Close()
-	if code := resp.StatusCode; 200 <= code && code <= 299 {
-		if err := json.NewDecoder(resp.Body).Decode(&s.token); err != nil {
-			return fmt.Errorf("could not unmarshal auth response: %v", err)
-		}
-	} else {
-		var apiErr apiError
-		if err := json.NewDecoder(resp.Body).Decode(&apiErr); err != nil {
-			return fmt.Errorf("could not unmarshal auth error response: %v", err)
-		}
-		return fmt.Errorf("tvdb authentication failed: %s", apiErr.Error)
-	}
-	log.Infof("Received tvdb token: %s...", s.token.JWTToken[:10])
-	return nil
-}
-
-// refreshToken at TVDB.
-func (s *Service) refreshToken() error {
-	req, err := http.NewRequest("GET", BaseURL+"login", nil)
-	if err != nil {
-		return fmt.Errorf("could not create refresh token request: %v", err)
-	}
+func (s *Service) addHeaders(req *http.Request) {
 	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", s.token.JWTToken))
+	req.Header.Add("Content-Type", "application/json")
+}
 
-	resp, err := s.client.Do(req)
-	if err != nil {
-		return fmt.Errorf("coult not do refresh token request: %v", err)
-	}
-	defer resp.Body.Close()
-
+func unmarshalResponse(resp *http.Response, success interface{}) error {
 	if code := resp.StatusCode; 200 <= code && code <= 299 {
-		if err := json.NewDecoder(resp.Body).Decode(&s.token); err != nil {
-			return fmt.Errorf("could not unmarshal auth response: %v", err)
+		if success != nil && resp.StatusCode != 204 {
+			return json.NewDecoder(resp.Body).Decode(success)
 		}
 	} else {
 		var apiErr apiError
 		if err := json.NewDecoder(resp.Body).Decode(&apiErr); err != nil {
-			return fmt.Errorf("could not unmarshal auth error response: %v", err)
+			return fmt.Errorf("unmarshal of response failed: %v", err)
 		}
-		return fmt.Errorf("tvdb authentication failed: %s", apiErr.Error)
-	}
-	log.Infof("Refreshed tvdb token: %s...", s.token.JWTToken[:10])
-	return nil
-}
-
-// check if a jwt token refresh is necessary and do it if so.
-func (s *Service) refreshTokenIfNecessary() error {
-	dur := time.Since(s.tokenFromDate)
-	if 18 < dur.Hours() && dur.Hours() < 24 {
-		log.Info("Refreshing tvdb token..")
-		return s.refreshToken()
-	}
-	if dur.Hours() > 24 || s.token.JWTToken == "" {
-		log.Info("Authenticating with tvdb.")
-		return s.authenticate()
+		return errors.New(apiErr.Error)
 	}
 	return nil
 }
