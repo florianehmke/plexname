@@ -38,7 +38,7 @@ func (pn *Namer) PrintPlexName() error {
 		originalTitle, err = pn.originalTvShowTitleFor(parseResult.Title, parseResult.Year)
 	}
 	if err != nil {
-		fmt.Println("Fail: %v", err)
+		fmt.Printf("Fail: %v\n", err)
 		return nil
 	}
 	fmt.Println(originalTitle)

@@ -4,18 +4,22 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
-	"github.com/imba3r/grabber/core/tmdb"
+	"github.com/florianehmke/plexname/tmdb"
 )
 
 func TestSearch_Success(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		f, err := ioutil.ReadFile("../../tests/fixtures/tmdb-search.json")
+		f, err := ioutil.ReadFile("../tests/fixtures/tmdb-search.json")
 		if err != nil {
 			t.Error(err)
 		} else {
 			w.Write(f)
+		}
+		if r.RequestURI != "/search/movie?api_key=apiKey&language=en-US&query=Test" {
+			t.Error("Expected different URI")
 		}
 	}))
 	defer ts.Close()
@@ -35,12 +39,15 @@ func TestSearch_Success(t *testing.T) {
 
 func TestSearch_Error(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		f, err := ioutil.ReadFile("../../tests/fixtures/tmdb-error.json")
+		f, err := ioutil.ReadFile("../tests/fixtures/tmdb-error.json")
 		if err != nil {
 			t.Error(err)
 		} else {
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write(f)
+		}
+		if r.RequestURI != "/search/movie?api_key=apiKey&language=en-US&query=Test" {
+			t.Error("Expected different URI")
 		}
 	}))
 	defer ts.Close()
@@ -50,7 +57,7 @@ func TestSearch_Error(t *testing.T) {
 	if err == nil {
 		t.Errorf("Expected an error")
 	}
-	if err.Error() != "The resource you requested could not be found." {
+	if !strings.Contains(err.Error(), "The resource you requested could not be found.") {
 		t.Errorf("Expected a different error message.")
 	}
 }

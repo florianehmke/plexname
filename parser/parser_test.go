@@ -31,7 +31,7 @@ var (
 func TestParse(t *testing.T) {
 	for title, expected := range qualityParserTests {
 		t.Logf("Testing title: %s", title)
-		got := parser.Parse(title)
+		got := parser.Parse(title, parser.Result{})
 		compareResult(t, &expected, got)
 	}
 }
