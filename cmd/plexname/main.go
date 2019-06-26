@@ -18,18 +18,18 @@ func main() {
 		tmdb.NewService(tmdb.BaseURL, config.GetToken("tmdb")),
 		tvdb.NewService(tvdb.BaseURL, config.GetToken("tvdb")),
 	)
-	pn.PrintPlexName()
+	pn.Run()
 }
 
 func parseArgs() namer.Args {
 	flag.Parse()
 	if len(flag.Args()) == 0 {
-		log.Fatal("no release name given")
+		log.Fatal("no directory given")
 	}
-	query := strings.Join(flag.Args(), " ")
+	path := strings.Join(flag.Args(), " ")
 
 	return namer.Args{
-		Query:     query,
+		Path:      path,
 		Overrides: parser.Result{},
 	}
 }

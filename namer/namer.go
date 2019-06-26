@@ -5,10 +5,12 @@ import (
 	"github.com/florianehmke/plexname/parser"
 	"github.com/florianehmke/plexname/tmdb"
 	"github.com/florianehmke/plexname/tvdb"
+	"os"
+	"path/filepath"
 )
 
 type Args struct {
-	Query     string
+	Path      string
 	Overrides parser.Result
 }
 
@@ -17,30 +19,34 @@ type Namer struct {
 
 	tmdb *tmdb.Service
 	tvdb *tvdb.Service
+
+	files map[string]os.FileInfo
 }
 
 func New(args Args, tmdb *tmdb.Service, tvdb *tvdb.Service) *Namer {
 	return &Namer{
-		args: args,
-		tmdb: tmdb,
-		tvdb: tvdb,
+		args:  args,
+		tmdb:  tmdb,
+		tvdb:  tvdb,
+		files: map[string]os.FileInfo{},
 	}
 }
 
-func (pn *Namer) PrintPlexName() error {
-	var originalTitle string
-	var err error
-	parseResult := parser.Parse(pn.args.Query, pn.args.Overrides)
-	if parseResult.IsMovie() {
-		originalTitle, err = pn.originalMovieTitleFor(parseResult.Title, parseResult.Year)
+func (pn *Namer) Run() error {
+	if err := pn.collectFiles(); err != nil {
+		return err
 	}
-	if parseResult.IsTV() {
-		originalTitle, err = pn.originalTvShowTitleFor(parseResult.Title, parseResult.Year)
-	}
-	if err != nil {
-		fmt.Printf("Fail: %v\n", err)
+	return nil
+}
+
+func (pn *Namer) collectFiles() error {
+	if err := filepath.Walk(pn.args.Path, func(path string, node os.FileInfo, err error) error {
+		if !node.IsDir() {
+			pn.files[path] = node
+		}
 		return nil
+	}); err != nil {
+		return fmt.Errorf("directory scan failed: %v", err)
 	}
-	fmt.Println(originalTitle)
 	return nil
 }
