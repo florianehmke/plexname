@@ -234,40 +234,8 @@ func (p *parser) parseMediaType() {
 	}
 }
 
-func isSpecialCharacter(r rune) bool {
-	if unicode.IsSpace(r) ||
-		r == '.' ||
-		r == '-' ||
-		r == '_' ||
-		r == '[' ||
-		r == ']' ||
-		r == '(' ||
-		r == ')' ||
-		r == '!' ||
-		r == '"' ||
-		r == '#' ||
-		r == '$' ||
-		r == '%' ||
-		r == '&' ||
-		r == '\'' ||
-		r == '*' ||
-		r == '+' ||
-		r == ',' ||
-		r == '/' ||
-		r == ':' ||
-		r == ';' ||
-		r == '<' ||
-		r == '=' ||
-		r == '>' ||
-		r == '?' ||
-		r == '@' ||
-		r == '\\' ||
-		r == '^' ||
-		r == '`' ||
-		r == '{' ||
-		r == '|' ||
-		r == '}' ||
-		r == '~' {
+func isValidFileNameCharacter(r rune) bool {
+	if unicode.IsLetter(r) || unicode.IsNumber(r) {
 		return true
 	}
 	return false
@@ -276,7 +244,7 @@ func isSpecialCharacter(r rune) bool {
 func clean(s string) string {
 	return strings.Map(
 		func(r rune) rune {
-			if isSpecialCharacter(r) {
+			if !isValidFileNameCharacter(r) || unicode.IsSpace(r) {
 				return -1
 			}
 			return r
@@ -288,7 +256,7 @@ func clean(s string) string {
 func tokenize(s string) []string {
 	t := strings.Map(
 		func(r rune) rune {
-			if isSpecialCharacter(r) {
+			if !isValidFileNameCharacter(r) || unicode.IsSpace(r) {
 				return rune(';')
 			}
 			return r
