@@ -2,11 +2,14 @@ package namer
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+
+	"github.com/florianehmke/plexname/fs"
 	"github.com/florianehmke/plexname/parser"
 	"github.com/florianehmke/plexname/tmdb"
 	"github.com/florianehmke/plexname/tvdb"
-	"os"
-	"path/filepath"
 )
 
 type Args struct {
@@ -19,16 +22,18 @@ type Namer struct {
 
 	tmdb *tmdb.Service
 	tvdb *tvdb.Service
+	fs   fs.FileSystem
 
-	files map[string]os.FileInfo
+	files map[string]fileInfo
 }
 
-func New(args Args, tmdb *tmdb.Service, tvdb *tvdb.Service) *Namer {
+func New(args Args, tmdb *tmdb.Service, tvdb *tvdb.Service, fs fs.FileSystem) *Namer {
 	return &Namer{
 		args:  args,
 		tmdb:  tmdb,
 		tvdb:  tvdb,
-		files: map[string]os.FileInfo{},
+		fs:    fs,
+		files: map[string]fileInfo{},
 	}
 }
 
@@ -39,10 +44,18 @@ func (pn *Namer) Run() error {
 	return nil
 }
 
+type fileInfo struct {
+	relativePath string
+	info         os.FileInfo
+}
+
 func (pn *Namer) collectFiles() error {
 	if err := filepath.Walk(pn.args.Path, func(path string, node os.FileInfo, err error) error {
 		if !node.IsDir() {
-			pn.files[path] = node
+			pn.files[path] = fileInfo{
+				relativePath: strings.TrimLeft(path, pn.args.Path+string(os.PathSeparator)),
+				info:         node,
+			}
 		}
 		return nil
 	}); err != nil {

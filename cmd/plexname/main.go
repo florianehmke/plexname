@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/florianehmke/plexname/config"
+	"github.com/florianehmke/plexname/fs"
 	"github.com/florianehmke/plexname/namer"
 	"github.com/florianehmke/plexname/parser"
 	"github.com/florianehmke/plexname/tmdb"
@@ -17,6 +18,7 @@ func main() {
 		parseArgs(),
 		tmdb.NewService(tmdb.BaseURL, config.GetToken("tmdb")),
 		tvdb.NewService(tvdb.BaseURL, config.GetToken("tvdb")),
+		fs.NewFileSystem(),
 	)
 	pn.Run()
 }
