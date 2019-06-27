@@ -1,34 +1,25 @@
 package fs
 
 import (
-	"io"
 	"os"
 )
 
 type FileSystem interface {
-	Open(name string) (File, error)
-	Stat(name string) (os.FileInfo, error)
+	Rename(oldpath, newpath string) error
+	MkdirAll(path string) error
 }
 
 func NewFileSystem() FileSystem {
 	return osFS{}
 }
 
-type File interface {
-	io.Closer
-	io.Reader
-	io.ReaderAt
-	io.Seeker
-	Stat() (os.FileInfo, error)
-}
-
 // osFS implements fileSystem using the local disk.
 type osFS struct{}
 
-func (osFS) Open(name string) (File, error) {
-	return os.Open(name)
+func (osFS) Rename(oldpath, newpath string) error {
+	return os.Rename(oldpath, newpath)
 }
 
-func (osFS) Stat(name string) (os.FileInfo, error) {
-	return os.Stat(name)
+func (osFS) MkdirAll(path string) error {
+	return os.MkdirAll(path, os.ModePerm)
 }

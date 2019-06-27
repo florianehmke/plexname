@@ -21,6 +21,10 @@ type Service struct {
 	tokenFromDate time.Time
 }
 
+type Client interface {
+	Search(query string, year int, page int) (*SearchResponse, error)
+}
+
 // New creates a new TMDB service.
 func NewService(baseURL string, apiKey string) *Service {
 	tvdbService := &Service{

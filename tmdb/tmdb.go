@@ -20,6 +20,10 @@ type Service struct {
 	throttle chan time.Time
 }
 
+type Client interface {
+	Search(query string, year int, page int) (*SearchResponse, error)
+}
+
 // NewService creates a new TMDB service.
 func NewService(baseURL string, apiKey string) *Service {
 	service := &Service{
