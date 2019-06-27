@@ -24,7 +24,7 @@ func TestSearch_Success(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	s := tmdb.NewService(ts.URL, "apiKey")
+	s := tmdb.NewClient(ts.URL, "apiKey")
 	r, err := s.Search("Test", -1, -1)
 	if err != nil {
 		t.Errorf("Expected no error, got %v", err)
@@ -52,7 +52,7 @@ func TestSearch_Error(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	s := tmdb.NewService(ts.URL, "apiKey")
+	s := tmdb.NewClient(ts.URL, "apiKey")
 	_, err := s.Search("Test", -1, -1)
 	if err == nil {
 		t.Errorf("Expected an error")

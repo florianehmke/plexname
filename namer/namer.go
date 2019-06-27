@@ -1,7 +1,6 @@
 package namer
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"path"
@@ -22,14 +21,14 @@ type Args struct {
 type Namer struct {
 	args Args
 
-	tmdb *tmdb.Service
-	tvdb *tvdb.Service
+	tmdb tmdb.Client
+	tvdb tvdb.Client
 	fs   fs.FileSystem
 
 	files map[string]fileInfo
 }
 
-func New(args Args, tmdb *tmdb.Service, tvdb *tvdb.Service, fs fs.FileSystem) *Namer {
+func New(args Args, tmdb tmdb.Client, tvdb tvdb.Client, fs fs.FileSystem) *Namer {
 	return &Namer{
 		args:  args,
 		tmdb:  tmdb,

@@ -11,8 +11,8 @@ import (
 
 const BaseURL = "https://api.thetvdb.com/"
 
-// Service is the TVDB service struct.
-type Service struct {
+// client is the TVDB client struct.
+type client struct {
 	client *http.Client
 
 	apiKey string
@@ -22,12 +22,12 @@ type Service struct {
 }
 
 type Client interface {
-	Search(query string, year int, page int) (*SearchResponse, error)
+	Search(query string) (*SearchResponse, error)
 }
 
-// New creates a new TMDB service.
-func NewService(baseURL string, apiKey string) *Service {
-	tvdbService := &Service{
+// New creates a new TMDB client.
+func NewClient(baseURL string, apiKey string) Client {
+	tvdbService := &client{
 		apiKey: apiKey,
 		client: &http.Client{},
 		token:  tokenResponse{},
@@ -35,7 +35,7 @@ func NewService(baseURL string, apiKey string) *Service {
 	return tvdbService
 }
 
-func (s *Service) addHeaders(req *http.Request) {
+func (s *client) addHeaders(req *http.Request) {
 	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", s.token.JWTToken))
 	req.Header.Add("Content-Type", "application/json")
 }

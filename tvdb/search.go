@@ -16,7 +16,7 @@ type SearchResponse struct {
 }
 
 // Search for series on TVDB.
-func (s *Service) Search(query string) (*SearchResponse, error) {
+func (s *client) Search(query string) (*SearchResponse, error) {
 	err := s.refreshTokenIfNecessary()
 	if err != nil {
 		return nil, fmt.Errorf("jwt token refresh failed: %v", err)

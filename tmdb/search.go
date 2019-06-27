@@ -21,7 +21,7 @@ type SearchResponse struct {
 }
 
 // Search for movies on TMDB.
-func (s *Service) Search(query string, year int, page int) (*SearchResponse, error) {
+func (s *client) Search(query string, year int, page int) (*SearchResponse, error) {
 	reqURL := fmt.Sprintf(s.baseURL+searchEndpoint, "movie", s.apiKey)
 
 	// Build the query string.

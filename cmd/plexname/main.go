@@ -16,8 +16,8 @@ import (
 func main() {
 	pn := namer.New(
 		parseArgs(),
-		tmdb.NewService(tmdb.BaseURL, config.GetToken("tmdb")),
-		tvdb.NewService(tvdb.BaseURL, config.GetToken("tvdb")),
+		tmdb.NewClient(tmdb.BaseURL, config.GetToken("tmdb")),
+		tvdb.NewClient(tvdb.BaseURL, config.GetToken("tvdb")),
 		fs.NewFileSystem(),
 	)
 	pn.Run()
