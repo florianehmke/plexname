@@ -9,10 +9,12 @@ import (
 const searchEndpoint = "search/series?name=%s"
 
 type SearchResponse struct {
-	Results []struct {
-		FirstAired string `json:"firstAired"`
-		Title      string `json:"seriesName"`
-	} `json:"data"`
+	Results []SearchResult `json:"data"`
+}
+
+type SearchResult struct {
+	FirstAired string `json:"firstAired"`
+	Title      string `json:"seriesName"`
 }
 
 // Search for series on TVDB.

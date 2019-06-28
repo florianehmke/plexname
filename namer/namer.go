@@ -79,7 +79,7 @@ func (fi *fileInfo) segmentToParse() string {
 	segment, length := "", 0
 	for _, s := range segments {
 		if len(s) > length {
-			segment, length = segment, len(segment)
+			segment, length = s, len(segment)
 		}
 	}
 	return segment
@@ -94,7 +94,7 @@ func (pn *Namer) collectFiles() error {
 	if err := filepath.Walk(pn.args.Path, func(path string, node os.FileInfo, err error) error {
 		if !node.IsDir() {
 			pn.files[path] = fileInfo{
-				relativePath: strings.TrimLeft(path, pn.args.Path+string(os.PathSeparator)),
+				relativePath: strings.TrimPrefix(path, pn.args.Path+string(os.PathSeparator)),
 				info:         node,
 			}
 		}
