@@ -9,19 +9,28 @@ import (
 )
 
 func TestParseFromFile(t *testing.T) {
-	tvdbResponse := &tvdb.SearchResponse{}
-	var tvdbError error
-	mockedTVDB := mock.NewMockTVDB(tvdbResponse, &tvdbError)
-
-	tmdbResponse := &tmdb.SearchResponse{Results: []tmdb.SearchResult{{Title: "hi"}}}
-	var tmdbError error
-	mockedTMDB := mock.NewMockTMDB(tmdbResponse, &tmdbError)
-
-	var fsError error
-	fs := mock.NewMockFS(&fsError)
+	mockedTVDB := newMockTVDB("hi", nil)
+	mockedTMDB := newMockTMDB("hi", nil)
+	fs := mock.NewMockFS(nil)
 
 	n := namer.New(namer.Args{Path: "../tests/fixtures/parse-from-file"}, mockedTMDB, mockedTVDB, fs)
 	if err := n.Run(); err != nil {
 		t.Error(err)
 	}
+}
+
+func newMockTVDB(result string, err error) tvdb.Client {
+	return mock.NewMockTVDB(tvdb.SearchResponse{
+		Results: []tvdb.SearchResult{
+			{Title: result},
+		},
+	}, err)
+}
+
+func newMockTMDB(result string, err error) tmdb.Client {
+	return mock.NewMockTMDB(tmdb.SearchResponse{
+		Results: []tmdb.SearchResult{
+			{Title: result},
+		},
+	}, err)
 }

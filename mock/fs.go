@@ -2,18 +2,18 @@ package mock
 
 import "github.com/florianehmke/plexname/fs"
 
-func NewMockFS(err *error) fs.FileSystem {
+func NewMockFS(err error) fs.FileSystem {
 	return mockFS{err: err}
 }
 
 type mockFS struct {
-	err *error
+	err error
 }
 
 func (fs mockFS) Rename(oldpath, newpath string) error {
-	return *fs.err
+	return fs.err
 }
 
 func (fs mockFS) MkdirAll(path string) error {
-	return *fs.err
+	return fs.err
 }
