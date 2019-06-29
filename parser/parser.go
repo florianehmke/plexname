@@ -46,6 +46,10 @@ type Result struct {
 	Proper     bool
 }
 
+func (r *Result) IsUnknownMediaType() bool {
+	return r.MediaType == MediaTypeUnknown
+}
+
 func (r *Result) IsMovie() bool {
 	return r.MediaType == MediaTypeMovie
 }

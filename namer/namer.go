@@ -1,6 +1,7 @@
 package namer
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path"
@@ -8,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/florianehmke/plexname/fs"
+	"github.com/florianehmke/plexname/log"
 	"github.com/florianehmke/plexname/parser"
 	"github.com/florianehmke/plexname/search"
 )
@@ -35,37 +37,61 @@ func New(args Args, searcher search.Searcher, fs fs.FileSystem) *Namer {
 	}
 }
 
-func (pn *Namer) Run() error {
-	if err := pn.collectFiles(); err != nil {
+func (n *Namer) Run() error {
+	if err := n.collectFiles(); err != nil {
 		return err
 	}
 
-	// FIXME needs refactor
-	for p, f := range pn.files {
-		pr := parser.Parse(f.segmentToParse(), pn.args.Overrides)
-
-		newName := ""
-		if pr.IsMovie() {
-			result, _ := pn.searcher.SearchMovie(pr.Title, pr.Year)
-			newName = result[0].Title
-		}
-		if pr.IsTV() {
-			result, _ := pn.searcher.SearchTV(pr.Title, pr.Year)
-			newName = result[0].Title
+	for p, f := range n.files {
+		pr := parser.Parse(f.segmentToParse(), n.args.Overrides)
+		sr, err := n.Search(pr)
+		if err != nil {
+			return fmt.Errorf("search for %s failed: %v", f.relativePath, err)
 		}
 
-		if newName != "" {
-			if err := pn.fs.MkdirAll(newName); err != nil {
-				return err
-			}
-			if err := pn.fs.Rename(p, pn.args.Path+string(os.PathSeparator)+newName+string(os.PathSeparator)+f.fileName()); err != nil {
-				return err
-			}
-		} else {
-			return fmt.Errorf("no suitable name found for: %s", f.relativePath)
+		if len(sr) == 0 {
+			return fmt.Errorf("no search result title %s of %s", pr.Title, f.relativePath)
+		}
+		if len(sr) > 1 {
+			log.Warn(fmt.Sprintf("ambigious result for %s", pr.Title))
+		}
+
+		newName, err := plexName(pr, &sr[0])
+		if err != nil {
+			return fmt.Errorf("could not get a plex name for %s: %v", f.relativePath, err)
+		}
+
+		newPath := n.args.Path + string(os.PathSeparator) + newName
+		if err := n.fs.MkdirAll(newPath); err != nil {
+			return fmt.Errorf("mkdir of %s failed: %v", newPath, err)
+		}
+		newFilePath := newPath + string(os.PathSeparator) + f.fileName()
+		if err := n.fs.Rename(p, newFilePath); err != nil {
+			return fmt.Errorf("move of %s to %s failed: %v", f.fileName(), newFilePath, err)
 		}
 	}
 	return nil
+}
+
+func plexName(pr *parser.Result, sr *search.Result) (string, error) {
+	year := pr.Year
+	if year == 0 {
+		year = sr.Year
+	}
+	if year == 0 {
+		return "", errors.New("neither parser nor search yielded a year")
+	}
+	return fmt.Sprintf("%s (%d)", sr.Title, year), nil
+}
+
+func (n *Namer) Search(pr *parser.Result) ([]search.Result, error) {
+	if pr.IsMovie() {
+		return n.searcher.SearchMovie(pr.Title, pr.Year)
+	}
+	if pr.IsTV() {
+		return n.searcher.SearchTV(pr.Title, pr.Year)
+	}
+	return nil, errors.New("can not search for unknown media type")
 }
 
 type fileInfo struct {
@@ -89,11 +115,11 @@ func (fi *fileInfo) fileName() string {
 	return fileName
 }
 
-func (pn *Namer) collectFiles() error {
-	if err := filepath.Walk(pn.args.Path, func(path string, node os.FileInfo, err error) error {
+func (n *Namer) collectFiles() error {
+	if err := filepath.Walk(n.args.Path, func(path string, node os.FileInfo, err error) error {
 		if !node.IsDir() {
-			pn.files[path] = fileInfo{
-				relativePath: strings.TrimPrefix(path, pn.args.Path+string(os.PathSeparator)),
+			n.files[path] = fileInfo{
+				relativePath: strings.TrimPrefix(path, n.args.Path+string(os.PathSeparator)),
 				info:         node,
 			}
 		}
