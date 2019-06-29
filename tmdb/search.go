@@ -18,8 +18,19 @@ type SearchResponse struct {
 }
 
 type SearchResult struct {
-	ReleaseDate string `json:"release_date"`
+	ReleaseDate string `json:"release_date"` // e.g. 2014-03-20
 	Title       string `json:"title"`
+}
+
+func (sr *SearchResult) Year() int {
+	year := 0
+	if sr.ReleaseDate != "" && len(sr.ReleaseDate) >= 4 {
+		yearString := sr.ReleaseDate[:3]
+		if y, err := strconv.Atoi(yearString); err != nil {
+			year = y
+		}
+	}
+	return year
 }
 
 // Search for movies on TMDB.

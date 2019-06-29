@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strconv"
 )
 
 const searchEndpoint = "search/series?name=%s"
@@ -13,8 +14,19 @@ type SearchResponse struct {
 }
 
 type SearchResult struct {
-	FirstAired string `json:"firstAired"`
+	FirstAired string `json:"firstAired"` // e.g. 1981-01-01
 	Title      string `json:"seriesName"`
+}
+
+func (sr *SearchResult) Year() int {
+	year := 0
+	if sr.FirstAired != "" && len(sr.FirstAired) >= 4 {
+		yearString := sr.FirstAired[:3]
+		if y, err := strconv.Atoi(yearString); err != nil {
+			year = y
+		}
+	}
+	return year
 }
 
 // Search for series on TVDB.
