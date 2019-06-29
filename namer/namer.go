@@ -104,7 +104,7 @@ func (fi *fileInfo) segmentToParse() string {
 	segment, length := "", 0
 	for _, s := range segments {
 		if len(s) > length {
-			segment, length = s, len(segment)
+			segment, length = s, len(s)
 		}
 	}
 	return segment
