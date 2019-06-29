@@ -45,4 +45,3 @@ var (
 func (r Resolution) String() string {
 	return resNames[r]
 }
-

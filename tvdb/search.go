@@ -4,19 +4,33 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strconv"
 )
 
 const searchEndpoint = "search/series?name=%s"
 
 type SearchResponse struct {
-	Results []struct {
-		FirstAired string `json:"firstAired"`
-		Title      string `json:"seriesName"`
-	} `json:"data"`
+	Results []SearchResult `json:"data"`
+}
+
+type SearchResult struct {
+	FirstAired string `json:"firstAired"` // e.g. 1981-01-01
+	Title      string `json:"seriesName"`
+}
+
+func (sr *SearchResult) Year() int {
+	year := 0
+	if sr.FirstAired != "" && len(sr.FirstAired) >= 4 {
+		yearString := sr.FirstAired[:4]
+		if y, err := strconv.Atoi(yearString); err == nil {
+			year = y
+		}
+	}
+	return year
 }
 
 // Search for series on TVDB.
-func (s *Service) Search(query string) (*SearchResponse, error) {
+func (s *client) Search(query string) (*SearchResponse, error) {
 	err := s.refreshTokenIfNecessary()
 	if err != nil {
 		return nil, fmt.Errorf("jwt token refresh failed: %v", err)

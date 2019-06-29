@@ -24,7 +24,7 @@ func TestSearch_Success(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	s := tmdb.NewService(ts.URL, "apiKey")
+	s := tmdb.NewClient(ts.URL, "apiKey")
 	r, err := s.Search("Test", -1, -1)
 	if err != nil {
 		t.Errorf("Expected no error, got %v", err)
@@ -52,12 +52,19 @@ func TestSearch_Error(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	s := tmdb.NewService(ts.URL, "apiKey")
+	s := tmdb.NewClient(ts.URL, "apiKey")
 	_, err := s.Search("Test", -1, -1)
 	if err == nil {
 		t.Errorf("Expected an error")
 	}
 	if !strings.Contains(err.Error(), "The resource you requested could not be found.") {
 		t.Errorf("Expected a different error message.")
+	}
+}
+
+func TestSearchResult_Year(t *testing.T) {
+	sr := tmdb.SearchResult{ReleaseDate: "2014-03-20"}
+	if sr.Year() != 2014 {
+		t.Errorf("expected year to be 2014")
 	}
 }

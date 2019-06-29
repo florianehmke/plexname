@@ -6,8 +6,10 @@ import (
 	"strings"
 
 	"github.com/florianehmke/plexname/config"
+	"github.com/florianehmke/plexname/fs"
 	"github.com/florianehmke/plexname/namer"
 	"github.com/florianehmke/plexname/parser"
+	"github.com/florianehmke/plexname/search"
 	"github.com/florianehmke/plexname/tmdb"
 	"github.com/florianehmke/plexname/tvdb"
 )
@@ -15,21 +17,24 @@ import (
 func main() {
 	pn := namer.New(
 		parseArgs(),
-		tmdb.NewService(tmdb.BaseURL, config.GetToken("tmdb")),
-		tvdb.NewService(tvdb.BaseURL, config.GetToken("tvdb")),
+		search.NewSearcher(
+			tmdb.NewClient(tmdb.BaseURL, config.GetToken("tmdb")),
+			tvdb.NewClient(tvdb.BaseURL, config.GetToken("tvdb")),
+		),
+		fs.NewFileSystem(),
 	)
-	pn.PrintPlexName()
+	pn.Run()
 }
 
 func parseArgs() namer.Args {
 	flag.Parse()
 	if len(flag.Args()) == 0 {
-		log.Fatal("no release name given")
+		log.Fatal("no directory given")
 	}
-	query := strings.Join(flag.Args(), " ")
+	path := strings.Join(flag.Args(), " ")
 
 	return namer.Args{
-		Query:     query,
+		Path:      path,
 		Overrides: parser.Result{},
 	}
 }

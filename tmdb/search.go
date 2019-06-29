@@ -11,17 +11,30 @@ const searchEndpoint = "/search/%s?api_key=%s&language=en-US"
 
 // SearchResponse from TMDB.
 type SearchResponse struct {
-	Page    int `json:"page"`
-	Results []struct {
-		ReleaseDate string `json:"release_date"`
-		Title       string `json:"title"`
-	} `json:"results"`
-	TotalResults int `json:"total_results"`
-	TotalPages   int `json:"total_pages"`
+	Page         int            `json:"page"`
+	Results      []SearchResult `json:"results"`
+	TotalResults int            `json:"total_results"`
+	TotalPages   int            `json:"total_pages"`
+}
+
+type SearchResult struct {
+	ReleaseDate string `json:"release_date"` // e.g. 2014-03-20
+	Title       string `json:"title"`
+}
+
+func (sr *SearchResult) Year() int {
+	year := 0
+	if sr.ReleaseDate != "" && len(sr.ReleaseDate) >= 4 {
+		yearString := sr.ReleaseDate[:4]
+		if y, err := strconv.Atoi(yearString); err == nil {
+			year = y
+		}
+	}
+	return year
 }
 
 // Search for movies on TMDB.
-func (s *Service) Search(query string, year int, page int) (*SearchResponse, error) {
+func (s *client) Search(query string, year int, page int) (*SearchResponse, error) {
 	reqURL := fmt.Sprintf(s.baseURL+searchEndpoint, "movie", s.apiKey)
 
 	// Build the query string.

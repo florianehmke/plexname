@@ -20,7 +20,7 @@ type authRequestBody struct {
 	Apikey string `json:"apikey"`
 }
 
-func (s *Service) requestInitialToken() error {
+func (s *client) requestInitialToken() error {
 	body, err := json.Marshal(authRequestBody{Apikey: config.GetToken("tvdb")})
 	if err != nil {
 		return fmt.Errorf("marshal of request body failed: %v", err)
@@ -36,7 +36,7 @@ func (s *Service) requestInitialToken() error {
 	return nil
 }
 
-func (s *Service) refreshToken() error {
+func (s *client) refreshToken() error {
 	req, err := http.NewRequest("GET", BaseURL+authEndpoint, nil)
 	if err != nil {
 		return fmt.Errorf("creation of get request failed: %v", err)
@@ -55,7 +55,7 @@ func (s *Service) refreshToken() error {
 	return nil
 }
 
-func (s *Service) refreshTokenIfNecessary() error {
+func (s *client) refreshTokenIfNecessary() error {
 	dur := time.Since(s.tokenFromDate)
 	if 18 < dur.Hours() && dur.Hours() < 24 {
 		return s.refreshToken()

@@ -11,8 +11,8 @@ import (
 
 const BaseURL = "https://api.themoviedb.org/3"
 
-// Service is the TMDB service struct.
-type Service struct {
+// client is the TMDB service struct.
+type client struct {
 	httpClient *http.Client
 	baseURL    string
 	apiKey     string
@@ -20,9 +20,13 @@ type Service struct {
 	throttle chan time.Time
 }
 
-// NewService creates a new TMDB service.
-func NewService(baseURL string, apiKey string) *Service {
-	service := &Service{
+type Client interface {
+	Search(query string, year int, page int) (*SearchResponse, error)
+}
+
+// NewClient creates a new TMDB service.
+func NewClient(baseURL string, apiKey string) Client {
+	service := &client{
 		httpClient: &http.Client{Timeout: 10 * time.Second},
 		baseURL:    baseURL,
 		apiKey:     apiKey,
@@ -31,11 +35,11 @@ func NewService(baseURL string, apiKey string) *Service {
 	return service
 }
 
-func (s *Service) ensureRateLimit() {
+func (s *client) ensureRateLimit() {
 	<-s.throttle
 }
 
-func (s *Service) startRateLimiter() {
+func (s *client) startRateLimiter() {
 	rate := time.Second / 4
 	burstLimit := 35
 	ticker := time.NewTicker(rate)
