@@ -1,17 +1,26 @@
 package namer_test
 
 import (
+	"log"
+	"testing"
+
 	"github.com/florianehmke/plexname/mock"
 	"github.com/florianehmke/plexname/namer"
 	"github.com/florianehmke/plexname/tmdb"
 	"github.com/florianehmke/plexname/tvdb"
-	"testing"
 )
 
 func TestParseFromFile(t *testing.T) {
-	mockedTVDB := newMockTVDB("hi", nil)
-	mockedTMDB := newMockTMDB("hi", nil)
-	fs := mock.NewMockFS(nil)
+	mockedTVDB := mockTVDBResponse("some tvshow", "")
+	mockedTMDB := mockTMDBResponse("some movie", "")
+
+	fs := mock.NewMockFS(func(oldPath string, newPath string) error {
+		log.Println(oldPath, newPath)
+		return nil
+	}, func(path string) error {
+		log.Println(path)
+		return nil
+	})
 
 	n := namer.New(namer.Args{Path: "../tests/fixtures/parse-from-file"}, mockedTMDB, mockedTVDB, fs)
 	if err := n.Run(); err != nil {
@@ -19,18 +28,20 @@ func TestParseFromFile(t *testing.T) {
 	}
 }
 
-func newMockTVDB(result string, err error) tvdb.Client {
+func mockTVDBResponse(result string, firstAired string) tvdb.Client {
 	return mock.NewMockTVDB(tvdb.SearchResponse{
-		Results: []tvdb.SearchResult{
-			{Title: result},
-		},
-	}, err)
+		Results: []tvdb.SearchResult{{
+			Title:      result,
+			FirstAired: firstAired,
+		}},
+	}, nil)
 }
 
-func newMockTMDB(result string, err error) tmdb.Client {
+func mockTMDBResponse(result string, releaseDate string) tmdb.Client {
 	return mock.NewMockTMDB(tmdb.SearchResponse{
-		Results: []tmdb.SearchResult{
-			{Title: result},
-		},
-	}, err)
+		Results: []tmdb.SearchResult{{
+			Title:       result,
+			ReleaseDate: releaseDate,
+		}},
+	}, nil)
 }
