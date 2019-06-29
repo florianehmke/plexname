@@ -29,6 +29,7 @@ type Namer struct {
 }
 
 func New(args Args, searcher search.Searcher, fs fs.FileSystem) *Namer {
+	args.Path = convertPathToSlash(args.Path)
 	return &Namer{
 		args:     args,
 		searcher: searcher,
@@ -61,12 +62,14 @@ func (n *Namer) Run() error {
 			return fmt.Errorf("could not get a plex name for %s: %v", f.relativePath, err)
 		}
 
-		newPath := n.args.Path + string(os.PathSeparator) + newName
+		newPath := filepath.FromSlash(n.args.Path + "/" + newName)
 		if err := n.fs.MkdirAll(newPath); err != nil {
 			return fmt.Errorf("mkdir of %s failed: %v", newPath, err)
 		}
-		newFilePath := newPath + string(os.PathSeparator) + f.fileName()
-		if err := n.fs.Rename(p, newFilePath); err != nil {
+
+		newFilePath := filepath.FromSlash(newPath + "/" + f.fileName())
+		oldFilePath := filepath.FromSlash(p)
+		if err := n.fs.Rename(oldFilePath, newFilePath); err != nil {
 			return fmt.Errorf("move of %s to %s failed: %v", f.fileName(), newFilePath, err)
 		}
 	}
@@ -100,7 +103,7 @@ type fileInfo struct {
 }
 
 func (fi *fileInfo) segmentToParse() string {
-	segments := strings.Split(fi.relativePath, string(os.PathSeparator))
+	segments := strings.Split(fi.relativePath, "/")
 	segment, length := "", 0
 	for _, s := range segments {
 		if len(s) > length {
@@ -118,8 +121,9 @@ func (fi *fileInfo) fileName() string {
 func (n *Namer) collectFiles() error {
 	if err := filepath.Walk(n.args.Path, func(path string, node os.FileInfo, err error) error {
 		if !node.IsDir() {
+			p := filepath.ToSlash(path)
 			n.files[path] = fileInfo{
-				relativePath: strings.TrimPrefix(path, n.args.Path+string(os.PathSeparator)),
+				relativePath: strings.TrimPrefix(p, n.args.Path+"/"),
 				info:         node,
 			}
 		}
@@ -128,4 +132,10 @@ func (n *Namer) collectFiles() error {
 		return fmt.Errorf("directory scan failed: %v", err)
 	}
 	return nil
+}
+
+func convertPathToSlash(path string) string {
+	slashPath := filepath.ToSlash(path)
+	slashPath = strings.TrimRight(slashPath, "/")
+	return slashPath
 }

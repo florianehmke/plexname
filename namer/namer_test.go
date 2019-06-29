@@ -1,6 +1,7 @@
 package namer_test
 
 import (
+	"path/filepath"
 	"testing"
 
 	"github.com/florianehmke/plexname/mock"
@@ -32,7 +33,7 @@ func TestParseMovieFromFile(t *testing.T) {
 	})
 
 	n := namer.New(
-		namer.Args{Path: "../tests/fixtures/parse-from-file"},
+		namer.Args{Path: filepath.FromSlash("../tests/fixtures/parse-from-file")},
 		search.NewSearcher(mockedTMDB, mockedTVDB), mockedFS)
 	if err := n.Run(); err != nil {
 		t.Error(err)
@@ -61,7 +62,7 @@ func TestParseMovieFromFolder(t *testing.T) {
 	})
 
 	n := namer.New(
-		namer.Args{Path: "../tests/fixtures/parse-from-folder"},
+		namer.Args{Path: filepath.FromSlash("../tests/fixtures/parse-from-folder")},
 		search.NewSearcher(mockedTMDB, mockedTVDB), mockedFS)
 	if err := n.Run(); err != nil {
 		t.Error(err)
