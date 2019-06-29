@@ -25,8 +25,8 @@ type SearchResult struct {
 func (sr *SearchResult) Year() int {
 	year := 0
 	if sr.ReleaseDate != "" && len(sr.ReleaseDate) >= 4 {
-		yearString := sr.ReleaseDate[:3]
-		if y, err := strconv.Atoi(yearString); err != nil {
+		yearString := sr.ReleaseDate[:4]
+		if y, err := strconv.Atoi(yearString); err == nil {
 			year = y
 		}
 	}

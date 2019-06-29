@@ -61,3 +61,10 @@ func TestSearch_Error(t *testing.T) {
 		t.Errorf("Expected a different error message.")
 	}
 }
+
+func TestSearchResult_Year(t *testing.T) {
+	sr := tmdb.SearchResult{ReleaseDate: "2014-03-20"}
+	if sr.Year() != 2014 {
+		t.Errorf("expected year to be 2014")
+	}
+}
