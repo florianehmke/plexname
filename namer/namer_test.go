@@ -1,7 +1,6 @@
 package namer_test
 
 import (
-	"log"
 	"testing"
 
 	"github.com/florianehmke/plexname/mock"
@@ -12,13 +11,23 @@ import (
 )
 
 func TestParseFromFile(t *testing.T) {
-	mockedTVDB := mockTVDBResponse("some tvshow", "")
-	mockedTMDB := mockTMDBResponse("some movie", "")
+	mockedTVDB := mockTVDBResponse("", "")
+	mockedTMDB := mockTMDBResponse("Real Movie Title", "")
 	mockedFS := mock.NewMockFS(func(oldPath string, newPath string) error {
-		log.Println(oldPath, newPath)
+		expectedOldPath := "../tests/fixtures/parse-from-file/movie title/Movie.Title.1999.German.1080p.DL.DTS.BluRay.AVC.Remux-group.mkv"
+		if oldPath != expectedOldPath {
+			t.Errorf("expected %s, got %s", expectedOldPath, oldPath)
+		}
+		expectedNewPath := "../tests/fixtures/parse-from-file/Real Movie Title (1999)/Movie.Title.1999.German.1080p.DL.DTS.BluRay.AVC.Remux-group.mkv"
+		if newPath != expectedNewPath {
+			t.Errorf("expected %s, got %s", expectedNewPath, newPath)
+		}
 		return nil
 	}, func(path string) error {
-		log.Println(path)
+		expectedPath := "../tests/fixtures/parse-from-file/Real Movie Title (1999)"
+		if path != expectedPath {
+			t.Errorf("expected %s, got %s", expectedPath, path)
+		}
 		return nil
 	})
 
