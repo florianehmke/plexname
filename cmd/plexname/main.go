@@ -9,6 +9,7 @@ import (
 	"github.com/florianehmke/plexname/fs"
 	"github.com/florianehmke/plexname/namer"
 	"github.com/florianehmke/plexname/parser"
+	"github.com/florianehmke/plexname/search"
 	"github.com/florianehmke/plexname/tmdb"
 	"github.com/florianehmke/plexname/tvdb"
 )
@@ -16,8 +17,10 @@ import (
 func main() {
 	pn := namer.New(
 		parseArgs(),
-		tmdb.NewClient(tmdb.BaseURL, config.GetToken("tmdb")),
-		tvdb.NewClient(tvdb.BaseURL, config.GetToken("tvdb")),
+		search.NewSearcher(
+			tmdb.NewClient(tmdb.BaseURL, config.GetToken("tmdb")),
+			tvdb.NewClient(tvdb.BaseURL, config.GetToken("tvdb")),
+		),
 		fs.NewFileSystem(),
 	)
 	pn.Run()

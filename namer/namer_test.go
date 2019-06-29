@@ -6,6 +6,7 @@ import (
 
 	"github.com/florianehmke/plexname/mock"
 	"github.com/florianehmke/plexname/namer"
+	"github.com/florianehmke/plexname/search"
 	"github.com/florianehmke/plexname/tmdb"
 	"github.com/florianehmke/plexname/tvdb"
 )
@@ -13,8 +14,7 @@ import (
 func TestParseFromFile(t *testing.T) {
 	mockedTVDB := mockTVDBResponse("some tvshow", "")
 	mockedTMDB := mockTMDBResponse("some movie", "")
-
-	fs := mock.NewMockFS(func(oldPath string, newPath string) error {
+	mockedFS := mock.NewMockFS(func(oldPath string, newPath string) error {
 		log.Println(oldPath, newPath)
 		return nil
 	}, func(path string) error {
@@ -22,7 +22,9 @@ func TestParseFromFile(t *testing.T) {
 		return nil
 	})
 
-	n := namer.New(namer.Args{Path: "../tests/fixtures/parse-from-file"}, mockedTMDB, mockedTVDB, fs)
+	n := namer.New(
+		namer.Args{Path: "../tests/fixtures/parse-from-file"},
+		search.NewSearcher(mockedTMDB, mockedTVDB), mockedFS)
 	if err := n.Run(); err != nil {
 		t.Error(err)
 	}

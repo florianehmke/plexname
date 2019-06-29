@@ -9,8 +9,7 @@ import (
 
 	"github.com/florianehmke/plexname/fs"
 	"github.com/florianehmke/plexname/parser"
-	"github.com/florianehmke/plexname/tmdb"
-	"github.com/florianehmke/plexname/tvdb"
+	"github.com/florianehmke/plexname/search"
 )
 
 type Args struct {
@@ -21,20 +20,18 @@ type Args struct {
 type Namer struct {
 	args Args
 
-	tmdb tmdb.Client
-	tvdb tvdb.Client
-	fs   fs.FileSystem
+	searcher search.Searcher
+	fs       fs.FileSystem
 
 	files map[string]fileInfo
 }
 
-func New(args Args, tmdb tmdb.Client, tvdb tvdb.Client, fs fs.FileSystem) *Namer {
+func New(args Args, searcher search.Searcher, fs fs.FileSystem) *Namer {
 	return &Namer{
-		args:  args,
-		tmdb:  tmdb,
-		tvdb:  tvdb,
-		fs:    fs,
-		files: map[string]fileInfo{},
+		args:     args,
+		searcher: searcher,
+		fs:       fs,
+		files:    map[string]fileInfo{},
 	}
 }
 
@@ -49,10 +46,12 @@ func (pn *Namer) Run() error {
 
 		newName := ""
 		if pr.IsMovie() {
-			newName, _ = pn.originalMovieTitleFor(pr.Title, pr.Year)
+			result, _ := pn.searcher.SearchMovie(pr.Title, pr.Year)
+			newName = result[0].Title
 		}
 		if pr.IsTV() {
-			newName, _ = pn.originalTvShowTitleFor(pr.Title, pr.Year)
+			result, _ := pn.searcher.SearchTV(pr.Title, pr.Year)
+			newName = result[0].Title
 		}
 
 		if newName != "" {
