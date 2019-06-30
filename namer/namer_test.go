@@ -39,6 +39,17 @@ var tests = []testFixture{
 		expectedNewPath:     "../tests/fixtures/parse-from-folder/Real Movie Title (1999)",
 		tmdbResponse:        []tmdb.SearchResult{{Title: "Real Movie Title"}},
 	},
+	{
+		fixturePath:         "../tests/fixtures/prompt-for-tmdb-response",
+		expectedOldFilePath: "../tests/fixtures/prompt-for-tmdb-response/Movie.Title.1999.German.1080p.DL.DTS.BluRay.AVC.Remux-group/movie.file.mkv",
+		expectedNewFilePath: "../tests/fixtures/prompt-for-tmdb-response/Real Movie Title 2 (1999)/movie.file.mkv",
+		expectedNewPath:     "../tests/fixtures/prompt-for-tmdb-response/Real Movie Title 2 (1999)",
+		promptResponse:      2,
+		tmdbResponse: []tmdb.SearchResult{
+			{Title: "Real Movie Title 1"},
+			{Title: "Real Movie Title 2"},
+		},
+	},
 }
 
 func TestFixtures(t *testing.T) {

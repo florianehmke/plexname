@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/florianehmke/plexname/fs"
-	"github.com/florianehmke/plexname/log"
 	"github.com/florianehmke/plexname/parser"
 	"github.com/florianehmke/plexname/prompt"
 	"github.com/florianehmke/plexname/search"
@@ -127,11 +126,18 @@ func (n *Namer) collectNewPaths() error {
 		if len(sr) == 0 {
 			return fmt.Errorf("no search result title %s of %s", pr.Title, f.currentRelativeFilePath)
 		}
+		var result *search.Result
 		if len(sr) > 1 {
-			log.Warn(fmt.Sprintf("ambigious result for %s", pr.Title))
+			i, err := n.prompter.AskNumber("make your choice")
+			if err != nil {
+				return fmt.Errorf("prompt error: %v", err)
+			}
+			result = &sr[i-1]
+		} else {
+			result = &sr[0]
 		}
 
-		newName, err := plexName(pr, &sr[0])
+		newName, err := plexName(pr, result)
 		if err != nil {
 			return fmt.Errorf("could not get a plex name for %s: %v", f.currentRelativeFilePath, err)
 		}
