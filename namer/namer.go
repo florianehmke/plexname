@@ -119,16 +119,21 @@ func (n *Namer) collectNewPaths() error {
 		f := &n.files[i]
 		pr := parser.Parse(f.segmentToParse(), n.args.Overrides)
 		sr, err := n.Search(pr)
+
 		if err != nil {
 			return fmt.Errorf("search for %s failed: %v", f.currentRelativeFilePath, err)
 		}
-
 		if len(sr) == 0 {
 			return fmt.Errorf("no search result title %s of %s", pr.Title, f.currentRelativeFilePath)
 		}
+
 		var result *search.Result
 		if len(sr) > 1 {
-			i, err := n.prompter.AskNumber("make your choice")
+			choices := []string{"Multiple results found online, pick one of:"}
+			for i, r := range sr {
+				choices = append(choices, fmt.Sprintf("[%d] %s (%d)", i+1, r.Title, r.Year))
+			}
+			i, err := n.prompter.AskNumber(strings.Join(choices, "\n"))
 			if err != nil {
 				return fmt.Errorf("prompt error: %v", err)
 			}
