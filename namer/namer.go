@@ -25,7 +25,7 @@ type Namer struct {
 	searcher search.Searcher
 	fs       fs.FileSystem
 
-	files map[string]fileInfo
+	files []fileInfo
 }
 
 func New(args Args, searcher search.Searcher, fs fs.FileSystem) *Namer {
@@ -34,44 +34,27 @@ func New(args Args, searcher search.Searcher, fs fs.FileSystem) *Namer {
 		args:     args,
 		searcher: searcher,
 		fs:       fs,
-		files:    map[string]fileInfo{},
+		files:    []fileInfo{},
 	}
+}
+
+type fileInfo struct {
+	currentFilePath         string
+	currentRelativeFilePath string
+
+	newPath     string
+	newFilePath string
 }
 
 func (n *Namer) Run() error {
 	if err := n.collectFiles(); err != nil {
 		return err
 	}
-
-	for p, f := range n.files {
-		pr := parser.Parse(f.segmentToParse(), n.args.Overrides)
-		sr, err := n.Search(pr)
-		if err != nil {
-			return fmt.Errorf("search for %s failed: %v", f.relativePath, err)
-		}
-
-		if len(sr) == 0 {
-			return fmt.Errorf("no search result title %s of %s", pr.Title, f.relativePath)
-		}
-		if len(sr) > 1 {
-			log.Warn(fmt.Sprintf("ambigious result for %s", pr.Title))
-		}
-
-		newName, err := plexName(pr, &sr[0])
-		if err != nil {
-			return fmt.Errorf("could not get a plex name for %s: %v", f.relativePath, err)
-		}
-
-		newPath := filepath.FromSlash(n.args.Path + "/" + newName)
-		if err := n.fs.MkdirAll(newPath); err != nil {
-			return fmt.Errorf("mkdir of %s failed: %v", newPath, err)
-		}
-
-		newFilePath := filepath.FromSlash(newPath + "/" + f.fileName())
-		oldFilePath := filepath.FromSlash(p)
-		if err := n.fs.Rename(oldFilePath, newFilePath); err != nil {
-			return fmt.Errorf("move of %s to %s failed: %v", f.fileName(), newFilePath, err)
-		}
+	if err := n.collectNewPaths(); err != nil {
+		return err
+	}
+	if err := n.moveAndRename(); err != nil {
+		return err
 	}
 	return nil
 }
@@ -97,13 +80,8 @@ func (n *Namer) Search(pr *parser.Result) ([]search.Result, error) {
 	return nil, errors.New("can not search for unknown media type")
 }
 
-type fileInfo struct {
-	relativePath string
-	info         os.FileInfo
-}
-
 func (fi *fileInfo) segmentToParse() string {
-	segments := strings.Split(fi.relativePath, "/")
+	segments := strings.Split(fi.currentRelativeFilePath, "/")
 	segment, length := "", 0
 	for _, s := range segments {
 		if len(s) > length {
@@ -114,7 +92,7 @@ func (fi *fileInfo) segmentToParse() string {
 }
 
 func (fi *fileInfo) fileName() string {
-	_, fileName := path.Split(fi.relativePath)
+	_, fileName := path.Split(fi.currentRelativeFilePath)
 	return fileName
 }
 
@@ -122,14 +100,57 @@ func (n *Namer) collectFiles() error {
 	if err := filepath.Walk(n.args.Path, func(path string, node os.FileInfo, err error) error {
 		if !node.IsDir() {
 			p := filepath.ToSlash(path)
-			n.files[path] = fileInfo{
-				relativePath: strings.TrimPrefix(p, n.args.Path+"/"),
-				info:         node,
-			}
+			n.files = append(n.files, fileInfo{
+				currentFilePath:         p,
+				currentRelativeFilePath: strings.TrimPrefix(p, n.args.Path+"/"),
+			})
 		}
 		return nil
 	}); err != nil {
 		return fmt.Errorf("directory scan failed: %v", err)
+	}
+	return nil
+}
+
+func (n *Namer) collectNewPaths() error {
+	for i, _ := range n.files {
+		f := &n.files[i]
+		pr := parser.Parse(f.segmentToParse(), n.args.Overrides)
+		sr, err := n.Search(pr)
+		if err != nil {
+			return fmt.Errorf("search for %s failed: %v", f.currentRelativeFilePath, err)
+		}
+
+		if len(sr) == 0 {
+			return fmt.Errorf("no search result title %s of %s", pr.Title, f.currentRelativeFilePath)
+		}
+		if len(sr) > 1 {
+			log.Warn(fmt.Sprintf("ambigious result for %s", pr.Title))
+		}
+
+		newName, err := plexName(pr, &sr[0])
+		if err != nil {
+			return fmt.Errorf("could not get a plex name for %s: %v", f.currentRelativeFilePath, err)
+		}
+
+		f.newPath = n.args.Path + "/" + newName
+		f.newFilePath = f.newPath + "/" + f.fileName()
+	}
+	return nil
+}
+
+func (n *Namer) moveAndRename() error {
+	for _, f := range n.files {
+		osNewPath := filepath.FromSlash(f.newPath)
+		if err := n.fs.MkdirAll(osNewPath); err != nil {
+			return fmt.Errorf("mkdir of %s failed: %v", osNewPath, err)
+		}
+
+		osNewFilePath := filepath.FromSlash(f.newFilePath)
+		osOldFilePath := filepath.FromSlash(f.currentFilePath)
+		if err := n.fs.Rename(osOldFilePath, osNewFilePath); err != nil {
+			return fmt.Errorf("move of %s to %s failed: %v", f.fileName(), osNewFilePath, err)
+		}
 	}
 	return nil
 }
