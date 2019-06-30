@@ -124,7 +124,7 @@ func (n *Namer) collectNewPaths() error {
 			return fmt.Errorf("search for %s failed: %v", f.currentRelativeFilePath, err)
 		}
 		if len(sr) == 0 {
-			return fmt.Errorf("no search result title %s of %s", pr.Title, f.currentRelativeFilePath)
+			return fmt.Errorf("no search result for title '%s' of %s", pr.Title, f.currentRelativeFilePath)
 		}
 
 		var result *search.Result

@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"strings"
 
@@ -25,7 +26,7 @@ func main() {
 		prompt.NewPrompter(),
 		fs.NewFileSystem(),
 	)
-	pn.Run()
+	fmt.Println(pn.Run())
 }
 
 func parseArgs() namer.Args {
