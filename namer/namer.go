@@ -67,7 +67,13 @@ func plexName(pr *parser.Result, sr *search.Result) (string, error) {
 		year = sr.Year
 	}
 	if year == 0 {
-		return "", errors.New("neither parser nor search yielded a year")
+		if pr.IsMovie() {
+			return "", errors.New("neither parser nor search yielded a year")
+		}
+		if pr.IsTV() {
+			// For TV it is okay if year is missing.
+			return sr.Title, nil
+		}
 	}
 	return fmt.Sprintf("%s (%d)", sr.Title, year), nil
 }
@@ -147,15 +153,29 @@ func (n *Namer) collectNewPaths() error {
 			return fmt.Errorf("could not get a plex name for %s: %v", f.currentRelativeFilePath, err)
 		}
 
-		// The new directory..
-		f.newPath = n.args.Path + "/" + plexName
+		if pr.IsMovie() {
+			// The new directory..
+			f.newPath = n.args.Path + "/" + plexName
 
-		// .. and the filename inside of that directory.
-		// See: https://support.plex.tv/articles/200381043-multi-version-movies/
-		extension := strings.ToLower(filepath.Ext(f.fileName()))
-		versionInfo := pr.VersionInfo()
-		fileName := fmt.Sprintf("%s - %s%s", plexName, versionInfo, extension)
-		f.newFilePath = f.newPath + "/" + fileName
+			// .. and the filename inside of that directory.
+			// See: https://support.plex.tv/articles/200381043-multi-version-movies/
+			extension := strings.ToLower(filepath.Ext(f.fileName()))
+			versionInfo := pr.VersionInfo()
+			fileName := fmt.Sprintf("%s - %s%s", plexName, versionInfo, extension)
+			f.newFilePath = f.newPath + "/" + fileName
+		}
+
+		if pr.IsTV() {
+			// The new directory + Season Folder ...
+			f.newPath = fmt.Sprintf("%s/%s/Season %02d", n.args.Path, plexName, pr.Season)
+
+			// .. and the episode filename inside of that directory.
+			// See: https://support.plex.tv/articles/naming-and-organizing-your-tv-show-files/
+			extension := strings.ToLower(filepath.Ext(f.fileName()))
+			versionInfo := pr.VersionInfo()
+			fileName := fmt.Sprintf("%s - s%02de%02d - %s%s", plexName, pr.Season, pr.Episode, versionInfo, extension)
+			f.newFilePath = f.newPath + "/" + fileName
+		}
 	}
 	return nil
 }

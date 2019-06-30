@@ -50,6 +50,13 @@ var tests = []testFixture{
 			{Title: "Real Movie Title 2"},
 		},
 	},
+	{
+		fixturePath:         "../tests/fixtures/parse-tv-from-file",
+		expectedOldFilePath: "../tests/fixtures/parse-tv-from-file/tv show title/TV-Show.S02E13.German.1080p.DL.DTS.BluRay.AVC.Remux-group.mkv",
+		expectedNewFilePath: "../tests/fixtures/parse-tv-from-file/Real TV Show Title/Season 02/Real TV Show Title - s02e13 - German.1080p.DL.Blu-ray.Remux.mkv",
+		expectedNewPath:     "../tests/fixtures/parse-tv-from-file/Real TV Show Title/Season 02",
+		tvdbResponse:        []tvdb.SearchResult{{Title: "Real TV Show Title"}},
+	},
 }
 
 func TestFixtures(t *testing.T) {
