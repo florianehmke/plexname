@@ -22,7 +22,7 @@ var (
 		"1080p web dl of Some Title": parser.Result{Resolution: parser.R1080, Source: parser.WEB},
 		"1080p.web-dl.of.A.Movie":    parser.Result{Resolution: parser.R1080, Source: parser.WEB},
 		"Some Title repack":          parser.Result{Proper: true},
-		"Some.WEB.DL-HUNDUB.1080P":   parser.Result{Resolution: parser.R1080, Source: parser.WEB},
+		"Some.WEB.DL-HUNDUB.1080P":   parser.Result{Resolution: parser.R1080, Source: parser.WEB, Language: parser.Hungarian},
 		"Some.Title.2012.Remux":      parser.Result{Year: 2012, Remux: true, Title: "some title"},
 		"Some.Title.S01E02":          parser.Result{Season: 1, Episode: 2},
 	}
@@ -48,6 +48,9 @@ func compareResult(t *testing.T, expected *parser.Result, got *parser.Result) {
 	}
 	if expected.Remux != got.Remux {
 		t.Errorf("expected remux=%t, got remux=%t", expected.Remux, got.Remux)
+	}
+	if expected.Language != got.Language {
+		t.Errorf("expected language=%d, got language=%d", expected.Language, got.Language)
 	}
 	if expected.Season != got.Season {
 		t.Errorf("expected season=%d, got season=%d", expected.Season, got.Season)

@@ -9,8 +9,8 @@ import (
 	"strings"
 
 	"github.com/florianehmke/plexname/fs"
-	"github.com/florianehmke/plexname/log"
 	"github.com/florianehmke/plexname/parser"
+	"github.com/florianehmke/plexname/prompt"
 	"github.com/florianehmke/plexname/search"
 )
 
@@ -23,52 +23,40 @@ type Namer struct {
 	args Args
 
 	searcher search.Searcher
+	prompter prompt.Prompter
 	fs       fs.FileSystem
 
-	files map[string]fileInfo
+	files []fileInfo
 }
 
-func New(args Args, searcher search.Searcher, fs fs.FileSystem) *Namer {
+func New(args Args, searcher search.Searcher, prompter prompt.Prompter, fs fs.FileSystem) *Namer {
+	args.Path = convertPathToSlash(args.Path)
 	return &Namer{
 		args:     args,
 		searcher: searcher,
+		prompter: prompter,
 		fs:       fs,
-		files:    map[string]fileInfo{},
+		files:    []fileInfo{},
 	}
+}
+
+type fileInfo struct {
+	currentFilePath         string
+	currentRelativeFilePath string
+
+	newPath     string
+	newFilePath string
 }
 
 func (n *Namer) Run() error {
 	if err := n.collectFiles(); err != nil {
 		return err
 	}
-
-	for p, f := range n.files {
-		pr := parser.Parse(f.segmentToParse(), n.args.Overrides)
-		sr, err := n.Search(pr)
-		if err != nil {
-			return fmt.Errorf("search for %s failed: %v", f.relativePath, err)
-		}
-
-		if len(sr) == 0 {
-			return fmt.Errorf("no search result title %s of %s", pr.Title, f.relativePath)
-		}
-		if len(sr) > 1 {
-			log.Warn(fmt.Sprintf("ambigious result for %s", pr.Title))
-		}
-
-		newName, err := plexName(pr, &sr[0])
-		if err != nil {
-			return fmt.Errorf("could not get a plex name for %s: %v", f.relativePath, err)
-		}
-
-		newPath := n.args.Path + string(os.PathSeparator) + newName
-		if err := n.fs.MkdirAll(newPath); err != nil {
-			return fmt.Errorf("mkdir of %s failed: %v", newPath, err)
-		}
-		newFilePath := newPath + string(os.PathSeparator) + f.fileName()
-		if err := n.fs.Rename(p, newFilePath); err != nil {
-			return fmt.Errorf("move of %s to %s failed: %v", f.fileName(), newFilePath, err)
-		}
+	if err := n.collectNewPaths(); err != nil {
+		return err
+	}
+	if err := n.moveAndRename(); err != nil {
+		return err
 	}
 	return nil
 }
@@ -79,7 +67,13 @@ func plexName(pr *parser.Result, sr *search.Result) (string, error) {
 		year = sr.Year
 	}
 	if year == 0 {
-		return "", errors.New("neither parser nor search yielded a year")
+		if pr.IsMovie() {
+			return "", errors.New("neither parser nor search yielded a year")
+		}
+		if pr.IsTV() {
+			// For TV it is okay if year is missing.
+			return sr.Title, nil
+		}
 	}
 	return fmt.Sprintf("%s (%d)", sr.Title, year), nil
 }
@@ -94,38 +88,116 @@ func (n *Namer) Search(pr *parser.Result) ([]search.Result, error) {
 	return nil, errors.New("can not search for unknown media type")
 }
 
-type fileInfo struct {
-	relativePath string
-	info         os.FileInfo
-}
-
 func (fi *fileInfo) segmentToParse() string {
-	segments := strings.Split(fi.relativePath, string(os.PathSeparator))
+	segments := strings.Split(fi.currentRelativeFilePath, "/")
 	segment, length := "", 0
 	for _, s := range segments {
 		if len(s) > length {
-			segment, length = s, len(segment)
+			segment, length = s, len(s)
 		}
 	}
 	return segment
 }
 
 func (fi *fileInfo) fileName() string {
-	_, fileName := path.Split(fi.relativePath)
+	_, fileName := path.Split(fi.currentRelativeFilePath)
 	return fileName
 }
 
 func (n *Namer) collectFiles() error {
 	if err := filepath.Walk(n.args.Path, func(path string, node os.FileInfo, err error) error {
 		if !node.IsDir() {
-			n.files[path] = fileInfo{
-				relativePath: strings.TrimPrefix(path, n.args.Path+string(os.PathSeparator)),
-				info:         node,
-			}
+			p := filepath.ToSlash(path)
+			n.files = append(n.files, fileInfo{
+				currentFilePath:         p,
+				currentRelativeFilePath: strings.TrimPrefix(p, n.args.Path+"/"),
+			})
 		}
 		return nil
 	}); err != nil {
 		return fmt.Errorf("directory scan failed: %v", err)
 	}
 	return nil
+}
+
+func (n *Namer) collectNewPaths() error {
+	for i, _ := range n.files {
+		f := &n.files[i]
+		pr := parser.Parse(f.segmentToParse(), n.args.Overrides)
+		sr, err := n.Search(pr)
+
+		if err != nil {
+			return fmt.Errorf("search for %s failed: %v", f.currentRelativeFilePath, err)
+		}
+		if len(sr) == 0 {
+			return fmt.Errorf("no search result for title '%s' of %s", pr.Title, f.currentRelativeFilePath)
+		}
+
+		var result *search.Result
+		if len(sr) > 1 {
+			choices := []string{"Multiple results found online, pick one of:"}
+			for i, r := range sr {
+				choices = append(choices, fmt.Sprintf("[%d] %s (%d)", i+1, r.Title, r.Year))
+			}
+			i, err := n.prompter.AskNumber(strings.Join(choices, "\n"))
+			if err != nil {
+				return fmt.Errorf("prompt error: %v", err)
+			}
+			result = &sr[i-1]
+		} else {
+			result = &sr[0]
+		}
+
+		plexName, err := plexName(pr, result)
+		if err != nil {
+			return fmt.Errorf("could not get a plex name for %s: %v", f.currentRelativeFilePath, err)
+		}
+
+		if pr.IsMovie() {
+			// The new directory..
+			f.newPath = n.args.Path + "/" + plexName
+
+			// .. and the filename inside of that directory.
+			// See: https://support.plex.tv/articles/200381043-multi-version-movies/
+			extension := strings.ToLower(filepath.Ext(f.fileName()))
+			versionInfo := pr.VersionInfo()
+			fileName := fmt.Sprintf("%s - %s%s", plexName, versionInfo, extension)
+			f.newFilePath = f.newPath + "/" + fileName
+		}
+
+		if pr.IsTV() {
+			// The new directory + Season Folder ...
+			f.newPath = fmt.Sprintf("%s/%s/Season %02d", n.args.Path, plexName, pr.Season)
+
+			// .. and the episode filename inside of that directory.
+			// See: https://support.plex.tv/articles/naming-and-organizing-your-tv-show-files/
+			extension := strings.ToLower(filepath.Ext(f.fileName()))
+			versionInfo := pr.VersionInfo()
+			fileName := fmt.Sprintf("%s - s%02de%02d - %s%s", plexName, pr.Season, pr.Episode, versionInfo, extension)
+			f.newFilePath = f.newPath + "/" + fileName
+		}
+	}
+	return nil
+}
+
+func (n *Namer) moveAndRename() error {
+	for _, f := range n.files {
+		osNewPath := filepath.FromSlash(f.newPath)
+		if err := n.fs.MkdirAll(osNewPath); err != nil {
+			return fmt.Errorf("mkdir of %s failed: %v", osNewPath, err)
+		}
+
+		osNewFilePath := filepath.FromSlash(f.newFilePath)
+		osOldFilePath := filepath.FromSlash(f.currentFilePath)
+		if err := n.fs.Rename(osOldFilePath, osNewFilePath); err != nil {
+			return fmt.Errorf("move of %s to %s failed: %v", f.fileName(), osNewFilePath, err)
+		}
+	}
+	return nil
+}
+
+func convertPathToSlash(path string) string {
+	slashPath := filepath.ToSlash(path)
+	slashPath = strings.TrimRight(slashPath, "/")
+	return slashPath
 }
