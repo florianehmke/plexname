@@ -1,5 +1,10 @@
 package parser
 
+import (
+	"fmt"
+	"strings"
+)
+
 // Resolution is the internal representation of a resolution.
 type Resolution int
 
@@ -40,6 +45,16 @@ var (
 		"2160p":   R2160,
 	}
 )
+
+func ParseResolution(res string) (Resolution, error) {
+	if r, ok := resMap[strings.ToLower(res)]; ok {
+		return r, nil
+	}
+	if res == "" {
+		return ResNA, nil
+	}
+	return ResNA, fmt.Errorf("unknown resolution: %s", res)
+}
 
 // String returns the string representation of r.
 func (r Resolution) String() string {

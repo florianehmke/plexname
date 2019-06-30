@@ -30,6 +30,11 @@ func main() {
 }
 
 func parseArgs() namer.Args {
+	overrides := parser.Result{}
+	flag.StringVar(&overrides.Title, "title", "", "movie/tv title")
+	flag.IntVar(&overrides.Year, "year", 0, "movie/tv year of release")
+	flag.IntVar(&overrides.Season, "season", 0, "tv season of release")
+	flag.IntVar(&overrides.Year, "episode", 0, "tv episode of release")
 	flag.Parse()
 	if len(flag.Args()) == 0 {
 		log.Fatal("no directory given")
@@ -38,6 +43,6 @@ func parseArgs() namer.Args {
 
 	return namer.Args{
 		Path:      path,
-		Overrides: parser.Result{},
+		Overrides: overrides,
 	}
 }

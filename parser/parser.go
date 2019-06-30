@@ -42,6 +42,7 @@ type Result struct {
 
 	Resolution Resolution
 	Source     Source
+	Language   Language
 	Remux      bool
 	Proper     bool
 }
@@ -64,6 +65,7 @@ func Parse(releaseName string, overrides Result) *Result {
 	p.parseYear()
 	p.parseResolution()
 	p.parseSource()
+	p.parseLanguage()
 	p.parseRemux()
 	p.parseProper()
 	p.parseEpisode()
@@ -156,6 +158,23 @@ func (p *parser) parseSource() {
 		}
 		if strings.Contains(p.cleanedName, k) {
 			p.result.Source = src
+		}
+	}
+}
+
+func (p *parser) parseLanguage() {
+	if p.overrides.Language != LangNA {
+		p.result.Language = p.overrides.Language
+		return
+	}
+	for _, t := range p.releaseTokens {
+		if lang, ok := langMap[t]; ok {
+			p.result.Language = lang
+		}
+	}
+	for k, lang := range langMap {
+		if strings.Contains(p.cleanedName, k) {
+			p.result.Language = lang
 		}
 	}
 }
