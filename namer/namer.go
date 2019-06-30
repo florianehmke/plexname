@@ -142,13 +142,20 @@ func (n *Namer) collectNewPaths() error {
 			result = &sr[0]
 		}
 
-		newName, err := plexName(pr, result)
+		plexName, err := plexName(pr, result)
 		if err != nil {
 			return fmt.Errorf("could not get a plex name for %s: %v", f.currentRelativeFilePath, err)
 		}
 
-		f.newPath = n.args.Path + "/" + newName
-		f.newFilePath = f.newPath + "/" + f.fileName()
+		// The new directory..
+		f.newPath = n.args.Path + "/" + plexName
+
+		// .. and the filename inside of that directory.
+		// See: https://support.plex.tv/articles/200381043-multi-version-movies/
+		extension := strings.ToLower(filepath.Ext(f.fileName()))
+		versionInfo := pr.VersionInfo()
+		fileName := fmt.Sprintf("%s - %s%s", plexName, versionInfo, extension)
+		f.newFilePath = f.newPath + "/" + fileName
 	}
 	return nil
 }

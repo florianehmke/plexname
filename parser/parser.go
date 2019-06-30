@@ -24,6 +24,10 @@ var (
 		"remux": true,
 	}
 
+	dualLangs = map[string]bool{
+		"dl": true,
+	}
+
 	propers = map[string]bool{
 		"repack": true,
 		"rerip":  true,
@@ -40,11 +44,12 @@ type Result struct {
 	Season  int
 	Episode int
 
-	Resolution Resolution
-	Source     Source
-	Language   Language
-	Remux      bool
-	Proper     bool
+	Resolution   Resolution
+	Source       Source
+	Language     Language
+	Remux        bool
+	Proper       bool
+	DualLanguage bool
 }
 
 func (r *Result) IsUnknownMediaType() bool {
@@ -59,6 +64,26 @@ func (r *Result) IsTV() bool {
 	return r.MediaType == MediaTypeTV
 }
 
+func (r *Result) VersionInfo() string {
+	tokens := []string{}
+	if r.Language != LangNA {
+		tokens = append(tokens, r.Language.String())
+	}
+	if r.Resolution != ResNA {
+		tokens = append(tokens, r.Resolution.String())
+	}
+	if r.DualLanguage {
+		tokens = append(tokens, "DL")
+	}
+	if r.Source != SourceNA {
+		tokens = append(tokens, r.Source.String())
+	}
+	if r.Remux {
+		tokens = append(tokens, "Remux")
+	}
+	return strings.Join(tokens, ".")
+}
+
 func Parse(releaseName string, overrides Result) *Result {
 	p := newParser(releaseName, overrides)
 	p.parseTitle()
@@ -66,6 +91,7 @@ func Parse(releaseName string, overrides Result) *Result {
 	p.parseResolution()
 	p.parseSource()
 	p.parseLanguage()
+	p.parseDualLanguage()
 	p.parseRemux()
 	p.parseProper()
 	p.parseEpisode()
@@ -175,6 +201,18 @@ func (p *parser) parseLanguage() {
 	for k, lang := range langMap {
 		if strings.Contains(p.cleanedName, k) {
 			p.result.Language = lang
+		}
+	}
+}
+
+func (p *parser) parseDualLanguage() {
+	if p.overrides.DualLanguage != false {
+		p.result.DualLanguage = p.overrides.DualLanguage
+		return
+	}
+	for _, t := range p.releaseTokens {
+		if _, ok := dualLangs[t]; ok {
+			p.result.DualLanguage = true
 		}
 	}
 }

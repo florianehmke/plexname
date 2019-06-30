@@ -28,21 +28,21 @@ var tests = []testFixture{
 	{
 		fixturePath:         "../tests/fixtures/parse-from-file",
 		expectedOldFilePath: "../tests/fixtures/parse-from-file/movie title/Movie.Title.1999.German.1080p.DL.DTS.BluRay.AVC.Remux-group.mkv",
-		expectedNewFilePath: "../tests/fixtures/parse-from-file/Real Movie Title (1999)/Movie.Title.1999.German.1080p.DL.DTS.BluRay.AVC.Remux-group.mkv",
+		expectedNewFilePath: "../tests/fixtures/parse-from-file/Real Movie Title (1999)/Real Movie Title (1999) - German.1080p.DL.Blu-ray.Remux.mkv",
 		expectedNewPath:     "../tests/fixtures/parse-from-file/Real Movie Title (1999)",
 		tmdbResponse:        []tmdb.SearchResult{{Title: "Real Movie Title"}},
 	},
 	{
 		fixturePath:         "../tests/fixtures/parse-from-folder",
 		expectedOldFilePath: "../tests/fixtures/parse-from-folder/Movie.Title.1999.German.1080p.DL.DTS.BluRay.AVC.Remux-group/movie.file.mkv",
-		expectedNewFilePath: "../tests/fixtures/parse-from-folder/Real Movie Title (1999)/movie.file.mkv",
+		expectedNewFilePath: "../tests/fixtures/parse-from-folder/Real Movie Title (1999)/Real Movie Title (1999) - German.1080p.DL.Blu-ray.Remux.mkv",
 		expectedNewPath:     "../tests/fixtures/parse-from-folder/Real Movie Title (1999)",
 		tmdbResponse:        []tmdb.SearchResult{{Title: "Real Movie Title"}},
 	},
 	{
 		fixturePath:         "../tests/fixtures/prompt-for-tmdb-response",
 		expectedOldFilePath: "../tests/fixtures/prompt-for-tmdb-response/Movie.Title.1999.German.1080p.DL.DTS.BluRay.AVC.Remux-group/movie.file.mkv",
-		expectedNewFilePath: "../tests/fixtures/prompt-for-tmdb-response/Real Movie Title 2 (1999)/movie.file.mkv",
+		expectedNewFilePath: "../tests/fixtures/prompt-for-tmdb-response/Real Movie Title 2 (1999)/Real Movie Title 2 (1999) - German.1080p.DL.Blu-ray.Remux.mkv",
 		expectedNewPath:     "../tests/fixtures/prompt-for-tmdb-response/Real Movie Title 2 (1999)",
 		promptResponse:      2,
 		tmdbResponse: []tmdb.SearchResult{
