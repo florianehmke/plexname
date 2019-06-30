@@ -26,24 +26,24 @@ type testFixture struct {
 
 var tests = []testFixture{
 	{
-		fixturePath:         "../tests/fixtures/parse-from-file",
-		expectedOldFilePath: "../tests/fixtures/parse-from-file/movie title/Movie.Title.1999.German.1080p.DL.DTS.BluRay.AVC.Remux-group.mkv",
-		expectedNewFilePath: "../tests/fixtures/parse-from-file/Real Movie Title (1999)/Real Movie Title (1999) - German.1080p.DL.Blu-ray.Remux.mkv",
-		expectedNewPath:     "../tests/fixtures/parse-from-file/Real Movie Title (1999)",
+		fixturePath:         "../tests/fixtures/movie-parse-from-file",
+		expectedOldFilePath: "../tests/fixtures/movie-parse-from-file/movie title/Movie.Title.1999.German.1080p.DL.DTS.BluRay.AVC.Remux-group.mkv",
+		expectedNewFilePath: "../tests/fixtures/movie-parse-from-file/Real Movie Title (1999)/Real Movie Title (1999) - German.1080p.DL.Blu-ray.Remux.mkv",
+		expectedNewPath:     "../tests/fixtures/movie-parse-from-file/Real Movie Title (1999)",
 		tmdbResponse:        []tmdb.SearchResult{{Title: "Real Movie Title"}},
 	},
 	{
-		fixturePath:         "../tests/fixtures/parse-from-folder",
-		expectedOldFilePath: "../tests/fixtures/parse-from-folder/Movie.Title.1999.German.1080p.DL.DTS.BluRay.AVC.Remux-group/movie.file.mkv",
-		expectedNewFilePath: "../tests/fixtures/parse-from-folder/Real Movie Title (1999)/Real Movie Title (1999) - German.1080p.DL.Blu-ray.Remux.mkv",
-		expectedNewPath:     "../tests/fixtures/parse-from-folder/Real Movie Title (1999)",
+		fixturePath:         "../tests/fixtures/movie-parse-from-folder",
+		expectedOldFilePath: "../tests/fixtures/movie-parse-from-folder/Movie.Title.1999.German.1080p.DL.DTS.BluRay.AVC.Remux-group/movie.file.mkv",
+		expectedNewFilePath: "../tests/fixtures/movie-parse-from-folder/Real Movie Title (1999)/Real Movie Title (1999) - German.1080p.DL.Blu-ray.Remux.mkv",
+		expectedNewPath:     "../tests/fixtures/movie-parse-from-folder/Real Movie Title (1999)",
 		tmdbResponse:        []tmdb.SearchResult{{Title: "Real Movie Title"}},
 	},
 	{
-		fixturePath:         "../tests/fixtures/prompt-for-tmdb-response",
-		expectedOldFilePath: "../tests/fixtures/prompt-for-tmdb-response/Movie.Title.1999.German.1080p.DL.DTS.BluRay.AVC.Remux-group/movie.file.mkv",
-		expectedNewFilePath: "../tests/fixtures/prompt-for-tmdb-response/Real Movie Title 2 (1999)/Real Movie Title 2 (1999) - German.1080p.DL.Blu-ray.Remux.mkv",
-		expectedNewPath:     "../tests/fixtures/prompt-for-tmdb-response/Real Movie Title 2 (1999)",
+		fixturePath:         "../tests/fixtures/movie-with-tmdb-prompt",
+		expectedOldFilePath: "../tests/fixtures/movie-with-tmdb-prompt/Movie.Title.1999.German.1080p.DL.DTS.BluRay.AVC.Remux-group/movie.file.mkv",
+		expectedNewFilePath: "../tests/fixtures/movie-with-tmdb-prompt/Real Movie Title 2 (1999)/Real Movie Title 2 (1999) - German.1080p.DL.Blu-ray.Remux.mkv",
+		expectedNewPath:     "../tests/fixtures/movie-with-tmdb-prompt/Real Movie Title 2 (1999)",
 		promptResponse:      2,
 		tmdbResponse: []tmdb.SearchResult{
 			{Title: "Real Movie Title 1"},
@@ -51,11 +51,22 @@ var tests = []testFixture{
 		},
 	},
 	{
-		fixturePath:         "../tests/fixtures/parse-tv-from-file",
-		expectedOldFilePath: "../tests/fixtures/parse-tv-from-file/tv show title/TV-Show.S02E13.German.1080p.DL.DTS.BluRay.AVC.Remux-group.mkv",
-		expectedNewFilePath: "../tests/fixtures/parse-tv-from-file/Real TV Show Title/Season 02/Real TV Show Title - s02e13 - German.1080p.DL.Blu-ray.Remux.mkv",
-		expectedNewPath:     "../tests/fixtures/parse-tv-from-file/Real TV Show Title/Season 02",
+		fixturePath:         "../tests/fixtures/tv-parse-from-file",
+		expectedOldFilePath: "../tests/fixtures/tv-parse-from-file/tv show title/TV-Show.S02E13.German.1080p.DL.DTS.BluRay.AVC.Remux-group.mkv",
+		expectedNewFilePath: "../tests/fixtures/tv-parse-from-file/Real TV Show Title/Season 02/Real TV Show Title - s02e13 - German.1080p.DL.Blu-ray.Remux.mkv",
+		expectedNewPath:     "../tests/fixtures/tv-parse-from-file/Real TV Show Title/Season 02",
 		tvdbResponse:        []tvdb.SearchResult{{Title: "Real TV Show Title"}},
+	},
+	{
+		fixturePath:         "../tests/fixtures/tv-with-tvdb-prompt",
+		expectedOldFilePath: "../tests/fixtures/tv-with-tvdb-prompt/tv show title/TV-Show.S02E13.German.1080p.DL.DTS.BluRay.AVC.Remux-group.mkv",
+		expectedNewFilePath: "../tests/fixtures/tv-with-tvdb-prompt/Another Real TV Show Title (1981)/Season 02/Another Real TV Show Title (1981) - s02e13 - German.1080p.DL.Blu-ray.Remux.mkv",
+		expectedNewPath:     "../tests/fixtures/tv-with-tvdb-prompt/Another Real TV Show Title (1981)/Season 02",
+		promptResponse:      2,
+		tvdbResponse: []tvdb.SearchResult{
+			{Title: "Real TV Show Title"},
+			{Title: "Another Real TV Show Title", FirstAired: "1981-01-01"},
+		},
 	},
 }
 
