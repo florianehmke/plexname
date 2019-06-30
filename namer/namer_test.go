@@ -11,82 +11,73 @@ import (
 	"github.com/florianehmke/plexname/tvdb"
 )
 
-func TestParseMovieFromFile(t *testing.T) {
-	mockedTVDB := mockTVDBResponse("", "")
-	mockedTMDB := mockTMDBResponse("Real Movie Title", "")
-	mockedFS := mock.NewMockFS(func(oldPath string, newPath string) error {
-		expectedOldPath := "../tests/fixtures/parse-from-file/movie title/Movie.Title.1999.German.1080p.DL.DTS.BluRay.AVC.Remux-group.mkv"
-		if oldPath != expectedOldPath {
-			t.Errorf("expected %s, got %s", expectedOldPath, oldPath)
-		}
-		expectedNewPath := "../tests/fixtures/parse-from-file/Real Movie Title (1999)/Movie.Title.1999.German.1080p.DL.DTS.BluRay.AVC.Remux-group.mkv"
-		if newPath != expectedNewPath {
-			t.Errorf("expected %s, got %s", expectedNewPath, newPath)
-		}
-		return nil
-	}, func(path string) error {
-		expectedPath := "../tests/fixtures/parse-from-file/Real Movie Title (1999)"
-		if path != expectedPath {
-			t.Errorf("expected %s, got %s", expectedPath, path)
-		}
-		return nil
-	})
+type testFixture struct {
+	fixturePath string
 
-	n := namer.New(
-		namer.Args{Path: filepath.FromSlash("../tests/fixtures/parse-from-file")},
-		search.NewSearcher(mockedTMDB, mockedTVDB),
-		mock.NewMockPrompter(nil, nil),
-		mockedFS)
-	if err := n.Run(); err != nil {
-		t.Error(err)
+	tvdbResponse []tvdb.SearchResult
+	tmdbResponse []tmdb.SearchResult
+
+	promptResponse int
+
+	expectedOldFilePath string
+	expectedNewFilePath string
+	expectedNewPath     string
+}
+
+var tests = []testFixture{
+	{
+		fixturePath:         "../tests/fixtures/parse-from-file",
+		expectedOldFilePath: "../tests/fixtures/parse-from-file/movie title/Movie.Title.1999.German.1080p.DL.DTS.BluRay.AVC.Remux-group.mkv",
+		expectedNewFilePath: "../tests/fixtures/parse-from-file/Real Movie Title (1999)/Movie.Title.1999.German.1080p.DL.DTS.BluRay.AVC.Remux-group.mkv",
+		expectedNewPath:     "../tests/fixtures/parse-from-file/Real Movie Title (1999)",
+		tmdbResponse:        []tmdb.SearchResult{{Title: "Real Movie Title"}},
+	},
+	{
+		fixturePath:         "../tests/fixtures/parse-from-folder",
+		expectedOldFilePath: "../tests/fixtures/parse-from-folder/Movie.Title.1999.German.1080p.DL.DTS.BluRay.AVC.Remux-group/movie.file.mkv",
+		expectedNewFilePath: "../tests/fixtures/parse-from-folder/Real Movie Title (1999)/movie.file.mkv",
+		expectedNewPath:     "../tests/fixtures/parse-from-folder/Real Movie Title (1999)",
+		tmdbResponse:        []tmdb.SearchResult{{Title: "Real Movie Title"}},
+	},
+}
+
+func TestFixtures(t *testing.T) {
+	for _, tc := range tests {
+		mockedTVDB := mockTVDBResponse(tc.tvdbResponse)
+		mockedTMDB := mockTMDBResponse(tc.tmdbResponse)
+		mockedFS := mock.NewMockFS(func(oldPath string, newPath string) error {
+			if oldPath != tc.expectedOldFilePath {
+				t.Errorf("expected %s, got %s", tc.expectedOldFilePath, oldPath)
+			}
+			if newPath != tc.expectedNewFilePath {
+				t.Errorf("expected %s, got %s", tc.expectedNewFilePath, newPath)
+			}
+			return nil
+		}, func(path string) error {
+			if path != tc.expectedNewPath {
+				t.Errorf("expected %s, got %s", tc.expectedNewPath, path)
+			}
+			return nil
+		})
+		mockedPrompter := mock.NewMockPrompter(func(question string) (i int, e error) {
+			return tc.promptResponse, nil
+		}, nil)
+
+		n := namer.New(
+			namer.Args{Path: filepath.FromSlash(tc.fixturePath)},
+			search.NewSearcher(mockedTMDB, mockedTVDB),
+			mockedPrompter,
+			mockedFS)
+		if err := n.Run(); err != nil {
+			t.Error(err)
+		}
 	}
 }
 
-func TestParseMovieFromFolder(t *testing.T) {
-	mockedTVDB := mockTVDBResponse("", "")
-	mockedTMDB := mockTMDBResponse("Real Movie Title", "")
-	mockedFS := mock.NewMockFS(func(oldPath string, newPath string) error {
-		expectedOldPath := "../tests/fixtures/parse-from-folder/Movie.Title.1999.German.1080p.DL.DTS.BluRay.AVC.Remux-group/movie.file.mkv"
-		if oldPath != expectedOldPath {
-			t.Errorf("expected %s, got %s", expectedOldPath, oldPath)
-		}
-		expectedNewPath := "../tests/fixtures/parse-from-folder/Real Movie Title (1999)/movie.file.mkv"
-		if newPath != expectedNewPath {
-			t.Errorf("expected %s, got %s", expectedNewPath, newPath)
-		}
-		return nil
-	}, func(path string) error {
-		expectedPath := "../tests/fixtures/parse-from-folder/Real Movie Title (1999)"
-		if path != expectedPath {
-			t.Errorf("expected %s, got %s", expectedPath, path)
-		}
-		return nil
-	})
-
-	n := namer.New(
-		namer.Args{Path: filepath.FromSlash("../tests/fixtures/parse-from-folder")},
-		search.NewSearcher(mockedTMDB, mockedTVDB),
-		mock.NewMockPrompter(nil, nil),
-		mockedFS)
-	if err := n.Run(); err != nil {
-		t.Error(err)
-	}
+func mockTVDBResponse(results []tvdb.SearchResult) tvdb.Client {
+	return mock.NewMockTVDB(tvdb.SearchResponse{Results: results}, nil)
 }
 
-func mockTVDBResponse(result string, firstAired string) tvdb.Client {
-	return mock.NewMockTVDB(tvdb.SearchResponse{
-		Results: []tvdb.SearchResult{{
-			Title:      result,
-			FirstAired: firstAired,
-		}},
-	}, nil)
-}
-
-func mockTMDBResponse(result string, releaseDate string) tmdb.Client {
-	return mock.NewMockTMDB(tmdb.SearchResponse{
-		Results: []tmdb.SearchResult{{
-			Title:       result,
-			ReleaseDate: releaseDate,
-		}},
-	}, nil)
+func mockTMDBResponse(results []tmdb.SearchResult) tmdb.Client {
+	return mock.NewMockTMDB(tmdb.SearchResponse{Results: results}, nil)
 }
