@@ -34,7 +34,9 @@ func TestParseMovieFromFile(t *testing.T) {
 
 	n := namer.New(
 		namer.Args{Path: filepath.FromSlash("../tests/fixtures/parse-from-file")},
-		search.NewSearcher(mockedTMDB, mockedTVDB), mockedFS)
+		search.NewSearcher(mockedTMDB, mockedTVDB),
+		mock.NewMockPrompter(nil, nil),
+		mockedFS)
 	if err := n.Run(); err != nil {
 		t.Error(err)
 	}
@@ -63,7 +65,9 @@ func TestParseMovieFromFolder(t *testing.T) {
 
 	n := namer.New(
 		namer.Args{Path: filepath.FromSlash("../tests/fixtures/parse-from-folder")},
-		search.NewSearcher(mockedTMDB, mockedTVDB), mockedFS)
+		search.NewSearcher(mockedTMDB, mockedTVDB),
+		mock.NewMockPrompter(nil, nil),
+		mockedFS)
 	if err := n.Run(); err != nil {
 		t.Error(err)
 	}

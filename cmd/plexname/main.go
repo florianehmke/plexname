@@ -9,6 +9,7 @@ import (
 	"github.com/florianehmke/plexname/fs"
 	"github.com/florianehmke/plexname/namer"
 	"github.com/florianehmke/plexname/parser"
+	"github.com/florianehmke/plexname/prompt"
 	"github.com/florianehmke/plexname/search"
 	"github.com/florianehmke/plexname/tmdb"
 	"github.com/florianehmke/plexname/tvdb"
@@ -21,6 +22,7 @@ func main() {
 			tmdb.NewClient(tmdb.BaseURL, config.GetToken("tmdb")),
 			tvdb.NewClient(tvdb.BaseURL, config.GetToken("tvdb")),
 		),
+		prompt.NewPrompter(),
 		fs.NewFileSystem(),
 	)
 	pn.Run()

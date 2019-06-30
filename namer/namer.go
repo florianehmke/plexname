@@ -11,6 +11,7 @@ import (
 	"github.com/florianehmke/plexname/fs"
 	"github.com/florianehmke/plexname/log"
 	"github.com/florianehmke/plexname/parser"
+	"github.com/florianehmke/plexname/prompt"
 	"github.com/florianehmke/plexname/search"
 )
 
@@ -23,16 +24,18 @@ type Namer struct {
 	args Args
 
 	searcher search.Searcher
+	prompter prompt.Prompter
 	fs       fs.FileSystem
 
 	files []fileInfo
 }
 
-func New(args Args, searcher search.Searcher, fs fs.FileSystem) *Namer {
+func New(args Args, searcher search.Searcher, prompter prompt.Prompter, fs fs.FileSystem) *Namer {
 	args.Path = convertPathToSlash(args.Path)
 	return &Namer{
 		args:     args,
 		searcher: searcher,
+		prompter: prompter,
 		fs:       fs,
 		files:    []fileInfo{},
 	}
