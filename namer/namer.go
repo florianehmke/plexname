@@ -15,8 +15,9 @@ import (
 )
 
 type Args struct {
-	Path      string
-	Overrides parser.Result
+	SourcePath string
+	TargetPath string
+	Overrides  parser.Result
 }
 
 type Namer struct {
@@ -29,8 +30,21 @@ type Namer struct {
 	files []fileInfo
 }
 
+func NewArgs(source, target string, overrides parser.Result) Args {
+	args := Args{}
+	args.SourcePath = filepath.ToSlash(source)
+	if target == "" {
+		args.TargetPath = args.SourcePath
+	} else {
+		args.TargetPath = filepath.ToSlash(target)
+	}
+	args.SourcePath = strings.TrimRight(args.SourcePath, "/")
+	args.TargetPath = strings.TrimRight(args.TargetPath, "/")
+	args.Overrides = overrides
+	return args
+}
+
 func New(args Args, searcher search.Searcher, prompter prompt.Prompter, fs fs.FileSystem) *Namer {
-	args.Path = convertPathToSlash(args.Path)
 	return &Namer{
 		args:     args,
 		searcher: searcher,
@@ -105,12 +119,12 @@ func (fi *fileInfo) fileName() string {
 }
 
 func (n *Namer) collectFiles() error {
-	if err := filepath.Walk(n.args.Path, func(path string, node os.FileInfo, err error) error {
+	if err := filepath.Walk(n.args.SourcePath, func(path string, node os.FileInfo, err error) error {
 		if !node.IsDir() {
 			p := filepath.ToSlash(path)
 			n.files = append(n.files, fileInfo{
 				currentFilePath:         p,
-				currentRelativeFilePath: strings.TrimPrefix(p, n.args.Path+"/"),
+				currentRelativeFilePath: strings.TrimPrefix(p, n.args.SourcePath+"/"),
 			})
 		}
 		return nil
@@ -155,7 +169,7 @@ func (n *Namer) collectNewPaths() error {
 
 		if pr.IsMovie() {
 			// The new directory..
-			f.newPath = n.args.Path + "/" + plexName
+			f.newPath = n.args.TargetPath + "/" + plexName
 
 			// .. and the filename inside of that directory.
 			// See: https://support.plex.tv/articles/200381043-multi-version-movies/
@@ -167,7 +181,7 @@ func (n *Namer) collectNewPaths() error {
 
 		if pr.IsTV() {
 			// The new directory + Season Folder ...
-			f.newPath = fmt.Sprintf("%s/%s/Season %02d", n.args.Path, plexName, pr.Season)
+			f.newPath = fmt.Sprintf("%s/%s/Season %02d", n.args.TargetPath, plexName, pr.Season)
 
 			// .. and the episode filename inside of that directory.
 			// See: https://support.plex.tv/articles/naming-and-organizing-your-tv-show-files/
@@ -194,10 +208,4 @@ func (n *Namer) moveAndRename() error {
 		}
 	}
 	return nil
-}
-
-func convertPathToSlash(path string) string {
-	slashPath := filepath.ToSlash(path)
-	slashPath = strings.TrimRight(slashPath, "/")
-	return slashPath
 }

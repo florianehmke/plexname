@@ -41,8 +41,5 @@ func parseArgs() namer.Args {
 	}
 	path := strings.Join(flag.Args(), " ")
 
-	return namer.Args{
-		Path:      path,
-		Overrides: overrides,
-	}
+	return namer.NewArgs(path, path, overrides)
 }
