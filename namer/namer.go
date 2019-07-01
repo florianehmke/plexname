@@ -159,7 +159,7 @@ func (n *Namer) collectNewPaths() error {
 
 		var result *search.Result
 		if len(sr) > 1 {
-			choices := []string{"Multiple results found online, pick one of:"}
+			choices := []string{fmt.Sprintf("Multiple results found online for %s, pick one of:", f.currentFilePath)}
 			for i, r := range sr {
 				choices = append(choices, fmt.Sprintf("[%d] %s (%d)", i+1, r.Title, r.Year))
 			}
@@ -200,6 +200,10 @@ func (n *Namer) collectNewPaths() error {
 			fileName := fmt.Sprintf("%s - s%02de%02d - %s%s", plexName, pr.Season, pr.Episode, versionInfo, extension)
 			f.newFilePath = f.newPath + "/" + fileName
 		}
+
+		fmt.Println("Source: ", f.currentFilePath)
+		fmt.Println("Target: ", f.newFilePath)
+		fmt.Println("-------")
 	}
 	return nil
 }
