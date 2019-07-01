@@ -41,6 +41,16 @@ func NewArgs(source, target string, overrides parser.Result) Args {
 	args.SourcePath = strings.TrimRight(args.SourcePath, "/")
 	args.TargetPath = strings.TrimRight(args.TargetPath, "/")
 	args.Overrides = overrides
+
+	// try to be smart and guess media type from source/target path
+	if overrides.MediaType == parser.MediaTypeUnknown {
+		for _, s := range []string{args.SourcePath, args.TargetPath} {
+			if mt := parser.ParseMediaTypeFromPath(s); mt != parser.MediaTypeUnknown {
+				overrides.MediaType = mt
+				break
+			}
+		}
+	}
 	return args
 }
 

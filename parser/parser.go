@@ -33,6 +33,15 @@ var (
 		"rerip":  true,
 		"proper": true,
 	}
+
+	mediaTypes = map[string]MediaType{
+		"tv":     MediaTypeTV,
+		"series": MediaTypeTV,
+		"shows":  MediaTypeTV,
+		"movie":  MediaTypeMovie,
+		"movies": MediaTypeMovie,
+		"filme":  MediaTypeMovie,
+	}
 )
 
 type Result struct {
@@ -325,4 +334,24 @@ func tokenize(s string) []string {
 		s,
 	)
 	return strings.Split(t, ";")
+}
+
+func ParseMediaTypeFromPath(path string) MediaType {
+	joined := strings.ToLower(clean(path))
+	tokens := tokenize(strings.ToLower(path))
+
+	for _, t := range tokens {
+		if mt, ok := mediaTypes[t]; ok {
+			return mt
+		}
+	}
+	for k, mt := range mediaTypes {
+		if len(k) < 5 {
+			continue
+		}
+		if strings.Contains(joined, k) {
+			return mt
+		}
+	}
+	return MediaTypeUnknown
 }
