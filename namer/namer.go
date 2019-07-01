@@ -73,6 +73,18 @@ type fileInfo struct {
 }
 
 func (n *Namer) Run() error {
+	if info, err := os.Stat(n.args.SourcePath); err == nil {
+		if info.IsDir() {
+			return n.runDir()
+		} else {
+			return n.runFile()
+		}
+	} else {
+		return err
+	}
+}
+
+func (n *Namer) runDir() error {
 	if err := n.collectFiles(); err != nil {
 		return err
 	}
@@ -81,6 +93,68 @@ func (n *Namer) Run() error {
 	}
 	if err := n.moveAndRename(); err != nil {
 		return err
+	}
+	return nil
+}
+
+func (n *Namer) runFile() error {
+	dir, file := filepath.Split(n.args.SourcePath)
+	pr := parser.Parse(file, n.args.Overrides)
+	sr, err := n.search(pr)
+	if err != nil {
+		return fmt.Errorf("search for %s failed: %v", file, err)
+	}
+	if len(sr) == 0 {
+		return fmt.Errorf("no search result for title '%s' of %s", pr.Title, file)
+	}
+
+	var result *search.Result
+	if len(sr) > 1 {
+		choices := []string{fmt.Sprintf("Multiple results found online for %s, pick one of:", n.args.SourcePath)}
+		for i, r := range sr {
+			choices = append(choices, fmt.Sprintf("[%d] %s (%d)", i+1, r.Title, r.Year))
+		}
+		i, err := n.prompter.AskNumber(strings.Join(choices, "\n"))
+		if err != nil {
+			return fmt.Errorf("prompt error: %v", err)
+		}
+		result = &sr[i-1]
+	} else {
+		result = &sr[0]
+	}
+
+	plexName, err := plexName(pr, result)
+	if err != nil {
+		return fmt.Errorf("could not get a plex name for %s: %v", n.args.SourcePath, err)
+	}
+
+	newFilePath := ""
+	if pr.IsMovie() {
+		// .. and the filename inside of that directory.
+		// See: https://support.plex.tv/articles/200381043-multi-version-movies/
+		extension := strings.ToLower(filepath.Ext(file))
+		versionInfo := pr.VersionInfo()
+		fileName := fmt.Sprintf("%s - %s%s", plexName, versionInfo, extension)
+		newFilePath = dir + fileName
+	}
+
+	if pr.IsTV() {
+		// .. and the episode filename inside of that directory.
+		// See: https://support.plex.tv/articles/naming-and-organizing-your-tv-show-files/
+		extension := strings.ToLower(filepath.Ext(file))
+		versionInfo := pr.VersionInfo()
+		fileName := fmt.Sprintf("%s - s%02de%02d - %s%s", plexName, pr.Season, pr.Episode, versionInfo, extension)
+		newFilePath = dir + fileName
+	}
+
+	fmt.Println("Source: ", n.args.SourcePath)
+	fmt.Println("Target: ", newFilePath)
+	fmt.Println("-------")
+
+	osNewFilePath := filepath.FromSlash(newFilePath)
+	osOldFilePath := filepath.FromSlash(n.args.SourcePath)
+	if err := n.fs.Rename(osOldFilePath, osNewFilePath); err != nil {
+		return fmt.Errorf("move of %s to %s failed: %v", file, osNewFilePath, err)
 	}
 	return nil
 }

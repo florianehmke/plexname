@@ -13,7 +13,8 @@ import (
 )
 
 type testFixture struct {
-	fixturePath string
+	sourcePath string
+	targetPath string
 
 	tvdbResponse []tvdb.SearchResult
 	tmdbResponse []tmdb.SearchResult
@@ -27,21 +28,24 @@ type testFixture struct {
 
 var tests = []testFixture{
 	{
-		fixturePath:         "../tests/fixtures/movie-parse-from-file",
+		sourcePath:          "../tests/fixtures/movie-parse-from-file",
+		targetPath:          "/dev/null",
 		expectedOldFilePath: "../tests/fixtures/movie-parse-from-file/movie title/Movie.Title.1999.German.1080p.DL.DTS.BluRay.AVC.Remux-group.mkv",
 		expectedNewFilePath: "/dev/null/Real Movie Title (1999)/Real Movie Title (1999) - German.1080p.DL.Blu-ray.Remux.mkv",
 		expectedNewPath:     "/dev/null/Real Movie Title (1999)",
 		tmdbResponse:        []tmdb.SearchResult{{Title: "Real Movie Title"}},
 	},
 	{
-		fixturePath:         "../tests/fixtures/movie-parse-from-folder",
+		sourcePath:          "../tests/fixtures/movie-parse-from-folder",
+		targetPath:          "/dev/null",
 		expectedOldFilePath: "../tests/fixtures/movie-parse-from-folder/Movie.Title.1999.German.1080p.DL.DTS.BluRay.AVC.Remux-group/movie.file.mkv",
 		expectedNewFilePath: "/dev/null/Real Movie Title (1999)/Real Movie Title (1999) - German.1080p.DL.Blu-ray.Remux.mkv",
 		expectedNewPath:     "/dev/null/Real Movie Title (1999)",
 		tmdbResponse:        []tmdb.SearchResult{{Title: "Real Movie Title"}},
 	},
 	{
-		fixturePath:         "../tests/fixtures/movie-with-tmdb-prompt",
+		sourcePath:          "../tests/fixtures/movie-with-tmdb-prompt",
+		targetPath:          "/dev/null",
 		expectedOldFilePath: "../tests/fixtures/movie-with-tmdb-prompt/Movie.Title.1999.German.1080p.DL.DTS.BluRay.AVC.Remux-group/movie.file.mkv",
 		expectedNewFilePath: "/dev/null/Real Movie Title 2 (1999)/Real Movie Title 2 (1999) - German.1080p.DL.Blu-ray.Remux.mkv",
 		expectedNewPath:     "/dev/null/Real Movie Title 2 (1999)",
@@ -52,14 +56,16 @@ var tests = []testFixture{
 		},
 	},
 	{
-		fixturePath:         "../tests/fixtures/tv-parse-from-file",
+		sourcePath:          "../tests/fixtures/tv-parse-from-file",
+		targetPath:          "/dev/null",
 		expectedOldFilePath: "../tests/fixtures/tv-parse-from-file/tv show title/TV-Show.S02E13.German.1080p.DL.DTS.BluRay.AVC.Remux-group.mkv",
 		expectedNewFilePath: "/dev/null/Real TV Show Title/Season 02/Real TV Show Title - s02e13 - German.1080p.DL.Blu-ray.Remux.mkv",
 		expectedNewPath:     "/dev/null/Real TV Show Title/Season 02",
 		tvdbResponse:        []tvdb.SearchResult{{Title: "Real TV Show Title"}},
 	},
 	{
-		fixturePath:         "../tests/fixtures/tv-with-tvdb-prompt",
+		sourcePath:          "../tests/fixtures/tv-with-tvdb-prompt",
+		targetPath:          "/dev/null",
 		expectedOldFilePath: "../tests/fixtures/tv-with-tvdb-prompt/tv show title/TV-Show.S02E13.German.1080p.DL.DTS.BluRay.AVC.Remux-group.mkv",
 		expectedNewFilePath: "/dev/null/Another Real TV Show Title (1981)/Season 02/Another Real TV Show Title (1981) - s02e13 - German.1080p.DL.Blu-ray.Remux.mkv",
 		expectedNewPath:     "/dev/null/Another Real TV Show Title (1981)/Season 02",
@@ -68,6 +74,12 @@ var tests = []testFixture{
 			{Title: "Real TV Show Title"},
 			{Title: "Another Real TV Show Title", FirstAired: "1981-01-01"},
 		},
+	},
+	{
+		sourcePath:          "../tests/fixtures/movie-file-only/Movie.Title.1999.German.1080p.DL.DTS.BluRay.AVC.Remux-group.mkv",
+		expectedOldFilePath: "../tests/fixtures/movie-file-only/Movie.Title.1999.German.1080p.DL.DTS.BluRay.AVC.Remux-group.mkv",
+		expectedNewFilePath: "../tests/fixtures/movie-file-only/Real Movie Title (1999) - German.1080p.DL.Blu-ray.Remux.mkv",
+		tmdbResponse:        []tmdb.SearchResult{{Title: "Real Movie Title"}},
 	},
 }
 
@@ -93,8 +105,8 @@ func TestFixtures(t *testing.T) {
 			return tc.promptResponse, nil
 		}, nil)
 
-		sourcePath := filepath.FromSlash(tc.fixturePath)
-		targetPath := "/dev/null"
+		sourcePath := filepath.FromSlash(tc.sourcePath)
+		targetPath := filepath.FromSlash(tc.targetPath)
 		n := namer.New(
 			namer.NewArgs(sourcePath, targetPath, parser.Result{}),
 			search.NewSearcher(mockedTMDB, mockedTVDB),
