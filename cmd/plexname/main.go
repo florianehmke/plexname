@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/florianehmke/plexname/config"
 	"github.com/florianehmke/plexname/fs"
@@ -27,25 +26,52 @@ func main() {
 		prompt.NewPrompter(),
 		fs.NewFileSystem(),
 	)
+	parseArgs()
 	if err := pn.Run(); err != nil {
 		log.Error(fmt.Sprintf("rename failed: %v", err))
-		os.Exit(1)
+		os.Exit(2)
 	}
 	log.Info("Yay, done!")
 	os.Exit(0)
 }
 
 func parseArgs() namer.Args {
+	flag.Usage = usage
 	overrides := parser.Result{}
 	flag.StringVar(&overrides.Title, "title", "", "movie/tv title")
 	flag.IntVar(&overrides.Year, "year", 0, "movie/tv year of release")
 	flag.IntVar(&overrides.Season, "season", 0, "tv season of release")
 	flag.IntVar(&overrides.Year, "episode", 0, "tv episode of release")
-	flag.Parse()
-	if len(flag.Args()) == 0 {
-		log.Fatal("no directory given")
-	}
-	path := strings.Join(flag.Args(), " ")
 
-	return namer.NewArgs(path, path, overrides)
+	// TODO:
+	// MediaType    MediaType
+	// Resolution   Resolution
+	// Source       Source
+	// Language     Language
+	// Remux        bool
+	// Proper       bool
+	// DualLanguage bool
+
+	flag.Parse()
+
+	if flag.NArg() == 0 || flag.NArg() > 2 {
+		flag.Usage()
+		os.Exit(1)
+	}
+	if flag.NArg() == 1 {
+		return namer.NewArgs(flag.Arg(0), flag.Arg(0), overrides)
+	} else {
+		return namer.NewArgs(flag.Arg(0), flag.Arg(1), overrides)
+	}
+}
+
+func usage() {
+	fmt.Println("plexname")
+	fmt.Println("  Rename your media files and folders for the Plex Media Server.")
+	fmt.Println()
+	fmt.Println("Usage: ")
+	fmt.Println("  plexname [option]... source [target]")
+	fmt.Println("")
+	fmt.Println("Options:")
+	flag.PrintDefaults()
 }

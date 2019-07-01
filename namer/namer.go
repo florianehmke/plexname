@@ -102,7 +102,7 @@ func plexName(pr *parser.Result, sr *search.Result) (string, error) {
 	return fmt.Sprintf("%s (%d)", sr.Title, year), nil
 }
 
-func (n *Namer) Search(pr *parser.Result) ([]search.Result, error) {
+func (n *Namer) search(pr *parser.Result) ([]search.Result, error) {
 	if pr.IsMovie() {
 		return n.searcher.SearchMovie(pr.Title, pr.Year)
 	}
@@ -148,7 +148,7 @@ func (n *Namer) collectNewPaths() error {
 	for i, _ := range n.files {
 		f := &n.files[i]
 		pr := parser.Parse(f.segmentToParse(), n.args.Overrides)
-		sr, err := n.Search(pr)
+		sr, err := n.search(pr)
 
 		if err != nil {
 			return fmt.Errorf("search for %s failed: %v", f.currentRelativeFilePath, err)
