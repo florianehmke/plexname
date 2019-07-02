@@ -26,7 +26,6 @@ func main() {
 		prompt.NewPrompter(),
 		fs.NewFileSystem(),
 	)
-	parseArgs()
 	if err := pn.Run(); err != nil {
 		log.Error(fmt.Sprintf("rename failed: %v", err))
 		os.Exit(1)
@@ -74,7 +73,8 @@ func usage() {
 	fmt.Println("  Rename your media files and folders for the Plex Media Server.")
 	fmt.Println()
 	fmt.Println("Usage: ")
-	fmt.Println("  plexname [option]... source [target]")
+	fmt.Println("  plexname [option]... source-dir [target-dir]")
+	fmt.Println("  plexname [option]... file")
 	fmt.Println("")
 	fmt.Println("Options:")
 	flag.PrintDefaults()
