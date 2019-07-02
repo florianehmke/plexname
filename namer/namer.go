@@ -10,7 +10,6 @@ import (
 
 	"github.com/florianehmke/plexname/fs"
 	"github.com/florianehmke/plexname/parser"
-	"github.com/florianehmke/plexname/prompt"
 	"github.com/florianehmke/plexname/search"
 )
 
@@ -24,7 +23,6 @@ type Namer struct {
 	args Args
 
 	searcher search.Searcher
-	prompter prompt.Prompter
 	fs       fs.FileSystem
 
 	files []fileInfo
@@ -54,11 +52,10 @@ func NewArgs(source, target string, overrides parser.Result) Args {
 	return args
 }
 
-func New(args Args, searcher search.Searcher, prompter prompt.Prompter, fs fs.FileSystem) *Namer {
+func New(args Args, searcher search.Searcher, fs fs.FileSystem) *Namer {
 	return &Namer{
 		args:     args,
 		searcher: searcher,
-		prompter: prompter,
 		fs:       fs,
 		files:    []fileInfo{},
 	}
@@ -104,26 +101,8 @@ func (n *Namer) runFile() error {
 	if err != nil {
 		return fmt.Errorf("search for %s failed: %v", file, err)
 	}
-	if len(sr) == 0 {
-		return fmt.Errorf("no search result for title '%s' of %s", pr.Title, file)
-	}
 
-	var result *search.Result
-	if len(sr) > 1 {
-		choices := []string{fmt.Sprintf("Multiple results found online for %s, pick one of:", n.args.SourcePath)}
-		for i, r := range sr {
-			choices = append(choices, fmt.Sprintf("[%d] %s (%d)", i+1, r.Title, r.Year))
-		}
-		i, err := n.prompter.AskNumber(strings.Join(choices, "\n"))
-		if err != nil {
-			return fmt.Errorf("prompt error: %v", err)
-		}
-		result = &sr[i-1]
-	} else {
-		result = &sr[0]
-	}
-
-	plexName, err := plexName(pr, result)
+	plexName, err := plexName(pr, &sr)
 	if err != nil {
 		return fmt.Errorf("could not get a plex name for %s: %v", n.args.SourcePath, err)
 	}
@@ -176,14 +155,14 @@ func plexName(pr *parser.Result, sr *search.Result) (string, error) {
 	return fmt.Sprintf("%s (%d)", sr.Title, year), nil
 }
 
-func (n *Namer) search(pr *parser.Result) ([]search.Result, error) {
+func (n *Namer) search(pr *parser.Result) (search.Result, error) {
 	if pr.IsMovie() {
-		return n.searcher.SearchMovie(pr.Title, pr.Year)
+		return n.searcher.SearchMovie(search.Query{Title: pr.Title, Year: pr.Year})
 	}
 	if pr.IsTV() {
-		return n.searcher.SearchTV(pr.Title, pr.Year)
+		return n.searcher.SearchTV(search.Query{Title: pr.Title, Year: pr.Year})
 	}
-	return nil, errors.New("can not search for unknown media type")
+	return search.Result{}, errors.New("can not search for unknown media type")
 }
 
 func (fi *fileInfo) segmentToParse() string {
@@ -227,26 +206,8 @@ func (n *Namer) collectNewPaths() error {
 		if err != nil {
 			return fmt.Errorf("search for %s failed: %v", f.currentRelativeFilePath, err)
 		}
-		if len(sr) == 0 {
-			return fmt.Errorf("no search result for title '%s' of %s", pr.Title, f.currentRelativeFilePath)
-		}
 
-		var result *search.Result
-		if len(sr) > 1 {
-			choices := []string{fmt.Sprintf("Multiple results found online for %s, pick one of:", f.currentFilePath)}
-			for i, r := range sr {
-				choices = append(choices, fmt.Sprintf("[%d] %s (%d)", i+1, r.Title, r.Year))
-			}
-			i, err := n.prompter.AskNumber(strings.Join(choices, "\n"))
-			if err != nil {
-				return fmt.Errorf("prompt error: %v", err)
-			}
-			result = &sr[i-1]
-		} else {
-			result = &sr[0]
-		}
-
-		plexName, err := plexName(pr, result)
+		plexName, err := plexName(pr, &sr)
 		if err != nil {
 			return fmt.Errorf("could not get a plex name for %s: %v", f.currentRelativeFilePath, err)
 		}

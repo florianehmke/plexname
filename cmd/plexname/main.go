@@ -22,8 +22,8 @@ func main() {
 		search.NewSearcher(
 			tmdb.NewClient(tmdb.BaseURL, config.GetToken("tmdb")),
 			tvdb.NewClient(tvdb.BaseURL, config.GetToken("tvdb")),
+			prompt.NewPrompter(),
 		),
-		prompt.NewPrompter(),
 		fs.NewFileSystem(),
 	)
 	if err := pn.Run(); err != nil {

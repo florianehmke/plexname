@@ -2,8 +2,10 @@ package search
 
 import (
 	"fmt"
+	"github.com/florianehmke/plexname/prompt"
 	"github.com/florianehmke/plexname/tmdb"
 	"github.com/florianehmke/plexname/tvdb"
+	"strings"
 )
 
 type Result struct {
@@ -11,45 +13,83 @@ type Result struct {
 	Year  int
 }
 
+type Query struct {
+	Title string
+	Year  int
+}
+
 type Searcher interface {
-	SearchMovie(query string, year int) ([]Result, error)
-	SearchTV(query string, year int) ([]Result, error)
+	SearchMovie(query Query) (Result, error)
+	SearchTV(query Query) (Result, error)
 }
 
 type searcher struct {
 	tmdbClient tmdb.Client
 	tvdbClient tvdb.Client
+	prompter   prompt.Prompter
+
+	cache map[Query]Result
 }
 
-func NewSearcher(tmdbClient tmdb.Client, tvdbClient tvdb.Client) Searcher {
+func NewSearcher(tmdbClient tmdb.Client, tvdbClient tvdb.Client, prompter prompt.Prompter) Searcher {
 	return &searcher{
 		tmdbClient: tmdbClient,
 		tvdbClient: tvdbClient,
+		prompter:   prompter,
+		cache:      map[Query]Result{},
 	}
 }
 
-func (s *searcher) SearchMovie(query string, year int) ([]Result, error) {
-	response, err := s.tmdbClient.Search(query, year, 0)
+func (s *searcher) SearchMovie(query Query) (Result, error) {
+	if v, ok := s.cache[query]; ok {
+		return v, nil
+	}
+	response, err := s.tmdbClient.Search(query.Title, query.Year, 0)
 	if err != nil {
-		return nil, fmt.Errorf("movie search failed: %v", err)
+		return Result{}, fmt.Errorf("movie search failed: %v", err)
 	}
 	var result []Result
 	for _, r := range response.Results {
 		result = append(result, Result{r.Title, r.Year()})
 	}
-	return result, nil
+	return s.toSingleResult(query, result)
 }
 
-func (s *searcher) SearchTV(query string, year int) ([]Result, error) {
-	response, err := s.tvdbClient.Search(query)
+func (s *searcher) SearchTV(query Query) (Result, error) {
+	if v, ok := s.cache[query]; ok {
+		return v, nil
+	}
+	response, err := s.tvdbClient.Search(query.Title)
 	if err != nil {
-		return nil, fmt.Errorf("tv search failed: %v", err)
+		return Result{}, fmt.Errorf("tv search failed: %v", err)
 	}
 	var result []Result
 	for _, r := range response.Results {
-		if year == 0 || year == r.Year() {
+		if query.Year == 0 || query.Year == r.Year() {
 			result = append(result, Result{r.Title, r.Year()})
 		}
 	}
+	return s.toSingleResult(query, result)
+}
+
+func (s *searcher) toSingleResult(query Query, results []Result) (Result, error) {
+	var result Result
+	if len(results) == 0 {
+		return result, fmt.Errorf("no search result for title '%s'", query.Title)
+	}
+	if len(results) > 1 {
+		choices := []string{fmt.Sprintf("Multiple results found online for %s, pick one of:", query.Title)}
+		for i, r := range results {
+			choices = append(choices, fmt.Sprintf("[%d] %s (%d)", i+1, r.Title, r.Year))
+		}
+		i, err := s.prompter.AskNumber(strings.Join(choices, "\n"))
+		if err != nil {
+			return result, fmt.Errorf("prompt error: %v", err)
+		}
+		result = results[i-1]
+	} else {
+		result = results[0]
+	}
+	s.cache[query] = result
 	return result, nil
 }
