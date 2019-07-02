@@ -17,14 +17,15 @@ import (
 )
 
 func main() {
+	args, dryRun := parseArgs()
 	pn := namer.New(
-		parseArgs(),
+		args,
 		search.NewSearcher(
 			tmdb.NewClient(tmdb.BaseURL, config.GetToken("tmdb")),
 			tvdb.NewClient(tvdb.BaseURL, config.GetToken("tvdb")),
 			prompt.NewPrompter(),
 		),
-		fs.NewFileSystem(),
+		fs.NewFileSystem(dryRun),
 	)
 	if err := pn.Run(); err != nil {
 		log.Error(fmt.Sprintf("rename failed: %v", err))
@@ -34,8 +35,12 @@ func main() {
 	os.Exit(0)
 }
 
-func parseArgs() namer.Args {
+func parseArgs() (namer.Args, bool) {
 	flag.Usage = usage
+
+	var dryRun bool
+	flag.BoolVar(&dryRun, "dry", false, "do a dry run")
+
 	overrides := parser.Result{}
 	flag.StringVar(&overrides.Title, "title", "", "movie/tv title")
 	flag.IntVar(&overrides.Year, "year", 0, "movie/tv year of release")
@@ -62,9 +67,9 @@ func parseArgs() namer.Args {
 		os.Exit(1)
 	}
 	if flag.NArg() == 1 {
-		return namer.NewArgs(flag.Arg(0), flag.Arg(0), overrides)
+		return namer.NewArgs(flag.Arg(0), flag.Arg(0), overrides), dryRun
 	} else {
-		return namer.NewArgs(flag.Arg(0), flag.Arg(1), overrides)
+		return namer.NewArgs(flag.Arg(0), flag.Arg(1), overrides), dryRun
 	}
 }
 
