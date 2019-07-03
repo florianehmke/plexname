@@ -105,8 +105,8 @@ func (n *Namer) runFile() error {
 		// See: https://support.plex.tv/articles/200381043-multi-version-movies/
 		extension := strings.ToLower(filepath.Ext(file))
 		versionInfo := pr.VersionInfo()
-		fileName := fmt.Sprintf("%s - %s%s", plexName, versionInfo, extension)
-		newFilePath = dir + fileName
+		fileName := strings.Join(sliceNonEmpty(plexName, versionInfo), " - ")
+		newFilePath = dir + fileName + extension
 	}
 
 	if pr.IsTV() {
@@ -114,8 +114,9 @@ func (n *Namer) runFile() error {
 		// See: https://support.plex.tv/articles/naming-and-organizing-your-tv-show-files/
 		extension := strings.ToLower(filepath.Ext(file))
 		versionInfo := pr.VersionInfo()
-		fileName := fmt.Sprintf("%s - s%02de%02d - %s%s", plexName, pr.Season, pr.Episode, versionInfo, extension)
-		newFilePath = dir + fileName
+		tvInfo := fmt.Sprintf("s%02de%02d", pr.Season, pr.Episode)
+		fileName := strings.Join(sliceNonEmpty(plexName, tvInfo, versionInfo), " - ")
+		newFilePath = dir + fileName + extension
 	}
 
 	return n.move(n.args.SourcePath, newFilePath)
@@ -193,8 +194,8 @@ func (n *Namer) collectNewPaths() error {
 			// See: https://support.plex.tv/articles/200381043-multi-version-movies/
 			extension := strings.ToLower(filepath.Ext(f.fileName()))
 			versionInfo := pr.VersionInfo()
-			fileName := fmt.Sprintf("%s - %s%s", plexName, versionInfo, extension)
-			f.newFilePath = f.newPath + "/" + fileName
+			fileName := strings.Join(sliceNonEmpty(plexName, versionInfo), " - ")
+			f.newFilePath = f.newPath + "/" + fileName + extension
 		}
 
 		if pr.IsTV() {
@@ -205,8 +206,9 @@ func (n *Namer) collectNewPaths() error {
 			// See: https://support.plex.tv/articles/naming-and-organizing-your-tv-show-files/
 			extension := strings.ToLower(filepath.Ext(f.fileName()))
 			versionInfo := pr.VersionInfo()
-			fileName := fmt.Sprintf("%s - s%02de%02d - %s%s", plexName, pr.Season, pr.Episode, versionInfo, extension)
-			f.newFilePath = f.newPath + "/" + fileName
+			tvInfo := fmt.Sprintf("s%02de%02d", pr.Season, pr.Episode)
+			fileName := strings.Join(sliceNonEmpty(plexName, tvInfo, versionInfo), " - ")
+			f.newFilePath = f.newPath + "/" + fileName + extension
 		}
 	}
 	return nil
@@ -237,4 +239,14 @@ func (n *Namer) move(source, target string) error {
 
 	log.Info(fmt.Sprintf("Renamed to: %s", target))
 	return nil
+}
+
+func sliceNonEmpty(strings ...string) []string {
+	var slice []string
+	for _, s := range strings {
+		if s != "" {
+			slice = append(slice, s)
+		}
+	}
+	return slice
 }

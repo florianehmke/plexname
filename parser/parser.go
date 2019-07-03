@@ -9,9 +9,9 @@ import (
 )
 
 var (
-	yearRegEx    = regexp.MustCompile(`19|20\d{2}`)
-	seasonRegEx  = regexp.MustCompile(`s\d{2}`)
-	episodeRegEx = regexp.MustCompile(`e\d{2}`)
+	yearRegEx    = regexp.MustCompile(`(?P<year>19|20\d{2})`)
+	seasonRegEx  = regexp.MustCompile(`s(?P<season>\d{2})`)
+	episodeRegEx = regexp.MustCompile(`e(?P<episode>\d{2})`)
 
 	fallbackRegExList = []*regexp.Regexp{
 		// Show Title S01/1 - Title.mkv
@@ -103,7 +103,6 @@ func Parse(source, target string, overrides Result) *Result {
 		result:    &Result{},
 	}
 
-	p.parseMediaType()
 	p.parseTitle()
 	p.parseYear()
 	p.parseResolution()
@@ -113,6 +112,7 @@ func Parse(source, target string, overrides Result) *Result {
 	p.parseRemux()
 	p.parseProper()
 	p.parseSeasonAndEpisode()
+	p.parseMediaType()
 	return p.result
 }
 
@@ -156,42 +156,12 @@ func newParseData(s string) parseData {
 	}
 }
 
-func (p *parser) parseMediaType() {
-	if p.overrides.MediaType != MediaTypeUnknown {
-		p.result.MediaType = p.overrides.MediaType
-		return
-	}
-	for _, tokens := range [][]string{
-		p.targetPath.tokens,
-		p.sourcePath.tokens,
-	} {
-		for _, s := range tokens {
-			if mt, ok := mediaTypes[s]; ok {
-				p.result.MediaType = mt
-				return
-			}
-		}
-	}
-	if seasonRegEx.MatchString(p.file.name) || seasonRegEx.MatchString(p.dir.name) {
-		p.result.MediaType = MediaTypeTV
-		return
-	}
-	if episodeRegEx.MatchString(p.file.name) || episodeRegEx.MatchString(p.dir.name) {
-		p.result.MediaType = MediaTypeTV
-		return
-	}
-	if yearRegEx.MatchString(p.file.name) || yearRegEx.MatchString(p.dir.name) {
-		p.result.MediaType = MediaTypeMovie
-		return
-	}
-}
-
 func (p *parser) parseTitle() {
 	if p.overrides.Title != "" {
 		p.result.Title = p.overrides.Title
 		return
 	}
-	titleTokens := []string{}
+	var titleTokens []string
 	for _, t := range p.dirOrFile().tokens {
 		if yearRegEx.MatchString(t) || seasonRegEx.MatchString(t) || episodeRegEx.MatchString(t) {
 			break
@@ -324,28 +294,39 @@ func (p *parser) parseSeasonAndEpisode() {
 		return
 	}
 	for _, t := range p.dirOrFile().tokens {
-		e := episodeRegEx.FindString(t)
-		if e != "" {
-			ep, err := strconv.Atoi(e[1:])
-			if err == nil {
-				p.result.Episode = ep
-			}
-		}
-		s := seasonRegEx.FindString(t)
-		if s != "" {
-			season, err := strconv.Atoi(s[1:])
-			if err == nil {
-				p.result.Season = season
-			}
-		}
+		r := populateResultFromRxpList([]*regexp.Regexp{seasonRegEx, episodeRegEx}, t)
+		p.result.mergeIn(r)
 	}
 
 	if p.result.Episode == 0 || p.result.Season == 0 {
-		r := getResultFromFallbackRegEx(p.dirAndFile.name)
+		r := getBestResultFromRxpList(fallbackRegExList, p.dirAndFile.name)
 		if r.score() > 0 {
 			p.result.Season = r.Season
 			p.result.Episode = r.Episode
 		}
+	}
+}
+
+func (p *parser) parseMediaType() {
+	if p.overrides.MediaType != MediaTypeUnknown {
+		p.result.MediaType = p.overrides.MediaType
+		return
+	}
+	for _, tokens := range [][]string{
+		p.targetPath.tokens,
+		p.sourcePath.tokens,
+	} {
+		for _, s := range tokens {
+			if mt, ok := mediaTypes[s]; ok {
+				p.result.MediaType = mt
+				return
+			}
+		}
+	}
+	if p.result.Episode != 0 || p.result.Season != 0 {
+		p.result.MediaType = MediaTypeTV
+	} else {
+		p.result.MediaType = MediaTypeMovie
 	}
 }
 
@@ -381,27 +362,19 @@ func tokenize(s string) []string {
 	return strings.Split(t, ";")
 }
 
-func getResultFromFallbackRegEx(s string) Result {
+func populateResultFromRxpList(rxps []*regexp.Regexp, s string) Result {
+	result := Result{}
+	for _, rxp := range rxps {
+		r := getResultFromRegEx(rxp, s)
+		result.mergeIn(r)
+	}
+	return result
+}
+
+func getBestResultFromRxpList(rxps []*regexp.Regexp, s string) Result {
 	var results []Result
-	for _, r := range fallbackRegExList {
-		match := r.FindStringSubmatch(s)
-		paramsMap := map[string]string{}
-		for i, name := range r.SubexpNames() {
-			if i > 0 && i <= len(match) {
-				paramsMap[name] = match[i]
-			}
-		}
-
-		result := Result{}
-		if match, ok := paramsMap["episode"]; ok {
-			episode, _ := strconv.Atoi(match)
-			result.Episode = episode
-		}
-		if match, ok := paramsMap["season"]; ok {
-			season, _ := strconv.Atoi(match)
-			result.Season = season
-		}
-
+	for _, rxp := range rxps {
+		result := getResultFromRegEx(rxp, s)
 		results = append(results, result)
 	}
 
@@ -411,6 +384,32 @@ func getResultFromFallbackRegEx(s string) Result {
 			result, score = r, r.score()
 		}
 	}
+	return result
+}
+
+func getResultFromRegEx(rxp *regexp.Regexp, s string) Result {
+	match := rxp.FindStringSubmatch(s)
+	paramsMap := map[string]string{}
+	for i, name := range rxp.SubexpNames() {
+		if i > 0 && i <= len(match) {
+			paramsMap[name] = match[i]
+		}
+	}
+
+	result := Result{}
+	if match, ok := paramsMap["episode"]; ok {
+		episode, _ := strconv.Atoi(match)
+		result.Episode = episode
+	}
+	if match, ok := paramsMap["season"]; ok {
+		season, _ := strconv.Atoi(match)
+		result.Season = season
+	}
+	if match, ok := paramsMap["year"]; ok {
+		year, _ := strconv.Atoi(match)
+		result.Year = year
+	}
+
 	return result
 }
 
@@ -450,4 +449,40 @@ func (r *Result) score() int {
 		score += 1
 	}
 	return score
+}
+
+func (r *Result) mergeIn(other Result) {
+	if other.Title != "" {
+		r.Title = other.Title
+	}
+	if other.MediaType != MediaTypeUnknown {
+		r.MediaType = other.MediaType
+	}
+	if other.Year != 0 {
+		r.Year = other.Year
+	}
+	if other.Season != 0 {
+		r.Season = other.Season
+	}
+	if other.Episode != 0 {
+		r.Episode = other.Episode
+	}
+	if other.Resolution != 0 {
+		r.Resolution = other.Resolution
+	}
+	if other.Source != SourceNA {
+		r.Source = other.Source
+	}
+	if other.Language != LangNA {
+		r.Language = other.Language
+	}
+	if other.Remux {
+		r.Remux = other.Remux
+	}
+	if other.Proper {
+		r.Proper = other.Proper
+	}
+	if other.DualLanguage {
+		r.DualLanguage = other.DualLanguage
+	}
 }
