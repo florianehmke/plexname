@@ -50,10 +50,6 @@ type Result struct {
 	DualLanguage bool
 }
 
-func (r *Result) IsUnknownMediaType() bool {
-	return r.MediaType == MediaTypeUnknown
-}
-
 func (r *Result) IsMovie() bool {
 	return r.MediaType == MediaTypeMovie
 }
@@ -80,10 +76,6 @@ func (r *Result) VersionInfo() string {
 		tokens = append(tokens, "Remux")
 	}
 	return strings.Join(tokens, ".")
-}
-
-func (r *Result) IncompleteTVResult() bool {
-	return r.MediaType == MediaTypeTV && r.Season == 0 && r.Episode == 0
 }
 
 func Parse(source, target string, overrides Result) *Result {
@@ -263,7 +255,6 @@ func (p *parser) parseSeasonAndEpisode() {
 		r := populateResultFromRxpList([]*regexp.Regexp{seasonRegEx, episodeRegEx}, t)
 		p.result.mergeIn(r)
 	}
-
 	if p.result.Episode == 0 || p.result.Season == 0 {
 		r := getBestResultFromRxpList(fallbackRegExList, p.dirAndFile.name)
 		if r.score() > 0 {
