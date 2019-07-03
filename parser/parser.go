@@ -24,6 +24,7 @@ func Parse(source, target string, overrides Result) *Result {
 		overrides: &overrides,
 		result:    &Result{},
 	}
+	p.setDirOrFile()
 
 	p.parseTitle()
 	p.parseYear()
@@ -47,19 +48,20 @@ type parser struct {
 	file       parseData
 	dir        parseData
 	dirAndFile parseData
+	dirOrFile  parseData
 
 	overrides *Result
 	result    *Result
 }
 
-func (p *parser) dirOrFile() parseData {
+func (p *parser) setDirOrFile() {
 	if p.file.length > p.dir.length {
-		return p.file
+		p.dirOrFile = p.file
+	} else if p.dir.length > p.file.length {
+		p.dirOrFile = p.dir
+	} else {
+		p.dirOrFile = p.file
 	}
-	if p.dir.length > p.file.length {
-		return p.dir
-	}
-	return p.file
 }
 
 type parseData struct {
@@ -82,7 +84,7 @@ func newParseData(s string) parseData {
 
 func (p *parser) parseTitle() {
 	var titleTokens []string
-	for _, t := range p.dirOrFile().tokens {
+	for _, t := range p.dirOrFile.tokens {
 		if yearRegEx.MatchString(t) || seasonRegEx.MatchString(t) || episodeRegEx.MatchString(t) {
 			break
 		}
@@ -92,7 +94,7 @@ func (p *parser) parseTitle() {
 }
 
 func (p *parser) parseYear() {
-	for _, t := range p.dirOrFile().tokens {
+	for _, t := range p.dirOrFile.tokens {
 		if yearRegEx.MatchString(t) {
 			year, err := strconv.Atoi(t)
 			if err == nil {
@@ -103,20 +105,20 @@ func (p *parser) parseYear() {
 }
 
 func (p *parser) parseResolution() {
-	for _, t := range p.dirOrFile().tokens {
+	for _, t := range p.dirOrFile.tokens {
 		if res, ok := resMap[t]; ok {
 			p.result.Resolution = res
 		}
 	}
 	for k, res := range resMap {
-		if strings.Contains(p.dirOrFile().joined, k) {
+		if strings.Contains(p.dirOrFile.joined, k) {
 			p.result.Resolution = res
 		}
 	}
 }
 
 func (p *parser) parseSource() {
-	for _, t := range p.dirOrFile().tokens {
+	for _, t := range p.dirOrFile.tokens {
 		if src, ok := srcMap[t]; ok {
 			p.result.Source = src
 		}
@@ -127,30 +129,30 @@ func (p *parser) parseSource() {
 		if len(k) < 5 {
 			continue
 		}
-		if strings.Contains(p.dirOrFile().joined, k) {
+		if strings.Contains(p.dirOrFile.joined, k) {
 			p.result.Source = src
 		}
 	}
 }
 
 func (p *parser) parseLanguage() {
-	for _, t := range p.dirOrFile().tokens {
+	for _, t := range p.dirOrFile.tokens {
 		if lang, ok := langMap[t]; ok {
 			p.result.Language = lang
 		}
 	}
 	for k, lang := range langMap {
-		if strings.Contains(p.dirOrFile().joined, k) {
+		if strings.Contains(p.dirOrFile.joined, k) {
 			p.result.Language = lang
 		}
 	}
 }
 
 func (p *parser) parseDualLanguage() {
-	for _, t := range p.dirOrFile().tokens {
+	for _, t := range p.dirOrFile.tokens {
 		if t == "dl" {
-			count := strings.Count(p.dirOrFile().joined, "dl")
-			webDL := strings.Contains(p.dirOrFile().joined, "webdl")
+			count := strings.Count(p.dirOrFile.joined, "dl")
+			webDL := strings.Contains(p.dirOrFile.joined, "webdl")
 			if count > 1 || !webDL {
 				p.result.DualLanguage = true
 			}
@@ -159,12 +161,12 @@ func (p *parser) parseDualLanguage() {
 }
 
 func (p *parser) parseRemux() {
-	for _, t := range p.dirOrFile().tokens {
+	for _, t := range p.dirOrFile.tokens {
 		if t == "remux" {
 			p.result.Remux = true
 		}
 	}
-	if strings.Contains(p.dirOrFile().joined, "remux") {
+	if strings.Contains(p.dirOrFile.joined, "remux") {
 		p.result.Remux = true
 	}
 }
@@ -176,20 +178,20 @@ func (p *parser) parseProper() {
 		"proper": true,
 	}
 
-	for _, t := range p.dirOrFile().tokens {
+	for _, t := range p.dirOrFile.tokens {
 		if _, ok := propers[t]; ok {
 			p.result.Proper = true
 		}
 	}
 	for k := range propers {
-		if strings.Contains(p.dirOrFile().joined, k) {
+		if strings.Contains(p.dirOrFile.joined, k) {
 			p.result.Proper = true
 		}
 	}
 }
 
 func (p *parser) parseSeasonAndEpisode() {
-	for _, t := range p.dirOrFile().tokens {
+	for _, t := range p.dirOrFile.tokens {
 		r := populateResultFromRxpList([]*regexp.Regexp{seasonRegEx, episodeRegEx}, t)
 		p.result.mergeIn(r)
 	}
