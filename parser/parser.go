@@ -147,31 +147,25 @@ func (p *parser) parseLanguage() {
 }
 
 func (p *parser) parseDualLanguage() {
-	dualLangs := map[string]bool{
-		"dl": true,
-	}
-
 	for _, t := range p.dirOrFile().tokens {
-		if _, ok := dualLangs[t]; ok {
-			p.result.DualLanguage = true
+		if t == "dl" {
+			count := strings.Count(p.dirOrFile().joined, "dl")
+			webDL := strings.Contains(p.dirOrFile().joined, "webdl")
+			if count > 1 || !webDL {
+				p.result.DualLanguage = true
+			}
 		}
 	}
 }
 
 func (p *parser) parseRemux() {
-	remuxes := map[string]bool{
-		"remux": true,
-	}
-
 	for _, t := range p.dirOrFile().tokens {
-		if _, ok := remuxes[t]; ok {
+		if t == "remux" {
 			p.result.Remux = true
 		}
 	}
-	for k := range remuxes {
-		if strings.Contains(p.dirOrFile().joined, k) {
-			p.result.Remux = true
-		}
+	if strings.Contains(p.dirOrFile().joined, "remux") {
+		p.result.Remux = true
 	}
 }
 

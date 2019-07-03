@@ -25,6 +25,7 @@ var (
 		"/some/dir/Some.WEB.DL-HUNDUB.1080P":   {Resolution: parser.R1080, Source: parser.WEB, Language: parser.Hungarian},
 		"/some/dir/Some.Title.2012.Remux":      {Year: 2012, Remux: true, Title: "some title"},
 		"/some/dir/Some.Title.S01E02":          {Season: 1, Episode: 2},
+		"/some/dir/Some.Title.WEB-DL":          {Source: parser.WEB, DualLanguage: false},
 	}
 )
 
@@ -63,6 +64,9 @@ func compareResult(t *testing.T, expected *parser.Result, got *parser.Result) {
 	}
 	if expected.Title != "" && expected.Title != got.Title {
 		t.Errorf("expected title=%s, got title=%s", expected.Title, got.Title)
+	}
+	if expected.DualLanguage != got.DualLanguage {
+		t.Errorf("expected dual-language=%t, got dual-language=%t", expected.DualLanguage, got.DualLanguage)
 	}
 }
 
