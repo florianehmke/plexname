@@ -31,7 +31,7 @@ var (
 func TestParse(t *testing.T) {
 	for title, expected := range qualityParserTests {
 		t.Logf("Testing title: %s", title)
-		got := parser.Parse(title, parser.Result{})
+		got := parser.Parse(title, "", parser.Result{})
 		compareResult(t, &expected, got)
 	}
 }
@@ -80,7 +80,7 @@ func TestOverride(t *testing.T) {
 		Proper:       true,
 		DualLanguage: true,
 	}
-	result := parser.Parse("1080p web dl of Some Title", overrides)
+	result := parser.Parse("1080p web dl of Some Title", "", overrides)
 	if overrides != *result {
 		t.Errorf("expected overrides to have an effect")
 	}

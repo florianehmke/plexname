@@ -113,6 +113,8 @@ func Parse(source, target string, overrides Result) *Result {
 	p.parseProper()
 	p.parseSeasonAndEpisode()
 	p.parseMediaType()
+
+	p.result.mergeIn(overrides)
 	return p.result
 }
 
@@ -157,10 +159,6 @@ func newParseData(s string) parseData {
 }
 
 func (p *parser) parseTitle() {
-	if p.overrides.Title != "" {
-		p.result.Title = p.overrides.Title
-		return
-	}
 	var titleTokens []string
 	for _, t := range p.dirOrFile().tokens {
 		if yearRegEx.MatchString(t) || seasonRegEx.MatchString(t) || episodeRegEx.MatchString(t) {
@@ -172,10 +170,6 @@ func (p *parser) parseTitle() {
 }
 
 func (p *parser) parseYear() {
-	if p.overrides.Year != 0 {
-		p.result.Year = p.overrides.Year
-		return
-	}
 	for _, t := range p.dirOrFile().tokens {
 		if yearRegEx.MatchString(t) {
 			year, err := strconv.Atoi(t)
@@ -187,10 +181,6 @@ func (p *parser) parseYear() {
 }
 
 func (p *parser) parseResolution() {
-	if p.overrides.Resolution != ResNA {
-		p.result.Resolution = p.overrides.Resolution
-		return
-	}
 	for _, t := range p.dirOrFile().tokens {
 		if res, ok := resMap[t]; ok {
 			p.result.Resolution = res
@@ -204,10 +194,6 @@ func (p *parser) parseResolution() {
 }
 
 func (p *parser) parseSource() {
-	if p.overrides.Source != SourceNA {
-		p.result.Source = p.overrides.Source
-		return
-	}
 	for _, t := range p.dirOrFile().tokens {
 		if src, ok := srcMap[t]; ok {
 			p.result.Source = src
@@ -226,10 +212,6 @@ func (p *parser) parseSource() {
 }
 
 func (p *parser) parseLanguage() {
-	if p.overrides.Language != LangNA {
-		p.result.Language = p.overrides.Language
-		return
-	}
 	for _, t := range p.dirOrFile().tokens {
 		if lang, ok := langMap[t]; ok {
 			p.result.Language = lang
@@ -243,10 +225,6 @@ func (p *parser) parseLanguage() {
 }
 
 func (p *parser) parseDualLanguage() {
-	if p.overrides.DualLanguage != false {
-		p.result.DualLanguage = p.overrides.DualLanguage
-		return
-	}
 	for _, t := range p.dirOrFile().tokens {
 		if _, ok := dualLangs[t]; ok {
 			p.result.DualLanguage = true
@@ -255,10 +233,6 @@ func (p *parser) parseDualLanguage() {
 }
 
 func (p *parser) parseRemux() {
-	if p.overrides.Remux != false {
-		p.result.Remux = p.overrides.Remux
-		return
-	}
 	for _, t := range p.dirOrFile().tokens {
 		if _, ok := remuxes[t]; ok {
 			p.result.Remux = true
@@ -272,10 +246,6 @@ func (p *parser) parseRemux() {
 }
 
 func (p *parser) parseProper() {
-	if p.overrides.Proper != false {
-		p.result.Proper = p.overrides.Proper
-		return
-	}
 	for _, t := range p.dirOrFile().tokens {
 		if _, ok := propers[t]; ok {
 			p.result.Proper = true
@@ -289,10 +259,6 @@ func (p *parser) parseProper() {
 }
 
 func (p *parser) parseSeasonAndEpisode() {
-	if p.overrides.Episode != 0 {
-		p.result.Episode = p.overrides.Episode
-		return
-	}
 	for _, t := range p.dirOrFile().tokens {
 		r := populateResultFromRxpList([]*regexp.Regexp{seasonRegEx, episodeRegEx}, t)
 		p.result.mergeIn(r)
@@ -308,10 +274,6 @@ func (p *parser) parseSeasonAndEpisode() {
 }
 
 func (p *parser) parseMediaType() {
-	if p.overrides.MediaType != MediaTypeUnknown {
-		p.result.MediaType = p.overrides.MediaType
-		return
-	}
 	for _, tokens := range [][]string{
 		p.targetPath.tokens,
 		p.sourcePath.tokens,
