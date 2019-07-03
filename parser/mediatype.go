@@ -2,7 +2,6 @@ package parser
 
 import (
 	"fmt"
-	"strings"
 )
 
 type MediaType int
@@ -23,26 +22,6 @@ var (
 		"filme":  MediaTypeMovie,
 	}
 )
-
-func ParseMediaTypeFromPath(path string) MediaType {
-	joined := strings.ToLower(clean(path))
-	tokens := tokenize(strings.ToLower(path))
-
-	for _, t := range tokens {
-		if mt, ok := mediaTypes[t]; ok {
-			return mt
-		}
-	}
-	for k, mt := range mediaTypes {
-		if len(k) < 5 {
-			continue
-		}
-		if strings.Contains(joined, k) {
-			return mt
-		}
-	}
-	return MediaTypeUnknown
-}
 
 func ParseMediaType(s string) (MediaType, error) {
 	if mt, ok := mediaTypes[s]; ok {

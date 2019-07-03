@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/florianehmke/plexname/fs"
+	"github.com/florianehmke/plexname/log"
 	"github.com/florianehmke/plexname/parser"
 	"github.com/florianehmke/plexname/search"
 )
@@ -39,16 +40,6 @@ func NewArgs(source, target string, overrides parser.Result) Args {
 	args.SourcePath = strings.TrimRight(args.SourcePath, "/")
 	args.TargetPath = strings.TrimRight(args.TargetPath, "/")
 	args.Overrides = overrides
-
-	// try to be smart and guess media type from source/target path
-	if overrides.MediaType == parser.MediaTypeUnknown {
-		for _, s := range []string{args.SourcePath, args.TargetPath} {
-			if mt := parser.ParseMediaTypeFromPath(s); mt != parser.MediaTypeUnknown {
-				overrides.MediaType = mt
-				break
-			}
-		}
-	}
 	return args
 }
 
@@ -95,8 +86,9 @@ func (n *Namer) runDir() error {
 }
 
 func (n *Namer) runFile() error {
+	log.Info(fmt.Sprintf("Processing: %s", n.args.SourcePath))
 	dir, file := filepath.Split(n.args.SourcePath)
-	pr := parser.Parse(file, n.args.Overrides)
+	pr := parser.Parse(file, file, n.args.Overrides)
 	sr, err := n.search(pr)
 	if err != nil {
 		return fmt.Errorf("search for %s failed: %v", file, err)
@@ -126,16 +118,7 @@ func (n *Namer) runFile() error {
 		newFilePath = dir + fileName
 	}
 
-	fmt.Println("Source: ", n.args.SourcePath)
-	fmt.Println("Target: ", newFilePath)
-	fmt.Println("-------")
-
-	osNewFilePath := filepath.FromSlash(newFilePath)
-	osOldFilePath := filepath.FromSlash(n.args.SourcePath)
-	if err := n.fs.Rename(osOldFilePath, osNewFilePath); err != nil {
-		return fmt.Errorf("move of %s to %s failed: %v", file, osNewFilePath, err)
-	}
-	return nil
+	return n.move(n.args.SourcePath, newFilePath)
 }
 
 func plexName(pr *parser.Result, sr *search.Result) (string, error) {
@@ -165,17 +148,6 @@ func (n *Namer) search(pr *parser.Result) (search.Result, error) {
 	return search.Result{}, errors.New("can not search for unknown media type")
 }
 
-func (fi *fileInfo) segmentToParse() string {
-	segments := strings.Split(fi.currentRelativeFilePath, "/")
-	segment, length := "", 0
-	for _, s := range segments {
-		if len(s) > length {
-			segment, length = s, len(s)
-		}
-	}
-	return segment
-}
-
 func (fi *fileInfo) fileName() string {
 	_, fileName := path.Split(fi.currentRelativeFilePath)
 	return fileName
@@ -200,7 +172,8 @@ func (n *Namer) collectFiles() error {
 func (n *Namer) collectNewPaths() error {
 	for i, _ := range n.files {
 		f := &n.files[i]
-		pr := parser.Parse(f.segmentToParse(), n.args.Overrides)
+		log.Info(fmt.Sprintf("Processing: %s", f.currentFilePath))
+		pr := parser.Parse(f.currentFilePath, f.currentFilePath, n.args.Overrides)
 		sr, err := n.search(pr)
 
 		if err != nil {
@@ -235,26 +208,33 @@ func (n *Namer) collectNewPaths() error {
 			fileName := fmt.Sprintf("%s - s%02de%02d - %s%s", plexName, pr.Season, pr.Episode, versionInfo, extension)
 			f.newFilePath = f.newPath + "/" + fileName
 		}
-
-		fmt.Println("Source: ", f.currentFilePath)
-		fmt.Println("Target: ", f.newFilePath)
-		fmt.Println("-------")
 	}
 	return nil
 }
 
 func (n *Namer) moveAndRename() error {
 	for _, f := range n.files {
-		osNewPath := filepath.FromSlash(f.newPath)
-		if err := n.fs.MkdirAll(osNewPath); err != nil {
-			return fmt.Errorf("mkdir of %s failed: %v", osNewPath, err)
-		}
-
-		osNewFilePath := filepath.FromSlash(f.newFilePath)
-		osOldFilePath := filepath.FromSlash(f.currentFilePath)
-		if err := n.fs.Rename(osOldFilePath, osNewFilePath); err != nil {
-			return fmt.Errorf("move of %s to %s failed: %v", f.fileName(), osNewFilePath, err)
+		if err := n.move(f.currentFilePath, f.newFilePath); err != nil {
+			return err
 		}
 	}
+	return nil
+}
+
+func (n *Namer) move(source, target string) error {
+	newDir, fileName := filepath.Split(target)
+
+	osNewDir := filepath.FromSlash(newDir)
+	if err := n.fs.MkdirAll(osNewDir); err != nil {
+		return fmt.Errorf("mkdir of %s failed: %v", osNewDir, err)
+	}
+
+	osTarget := filepath.FromSlash(target)
+	osSource := filepath.FromSlash(source)
+	if err := n.fs.Rename(osSource, osTarget); err != nil {
+		return fmt.Errorf("move of %s to %s failed: %v", fileName, osNewDir, err)
+	}
+
+	log.Info(fmt.Sprintf("Renamed to: %s", target))
 	return nil
 }
