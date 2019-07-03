@@ -8,9 +8,9 @@ import (
 	"github.com/florianehmke/plexname/config"
 	"github.com/florianehmke/plexname/fs"
 	"github.com/florianehmke/plexname/log"
-	"github.com/florianehmke/plexname/namer"
 	"github.com/florianehmke/plexname/parser"
 	"github.com/florianehmke/plexname/prompt"
+	"github.com/florianehmke/plexname/renamer"
 	"github.com/florianehmke/plexname/search"
 	"github.com/florianehmke/plexname/tmdb"
 	"github.com/florianehmke/plexname/tvdb"
@@ -18,7 +18,7 @@ import (
 
 func main() {
 	args, dryRun := parseArgs()
-	pn := namer.New(
+	rn := renamer.New(
 		args,
 		search.NewSearcher(
 			tmdb.NewClient(tmdb.BaseURL, config.GetToken("tmdb")),
@@ -27,7 +27,7 @@ func main() {
 		),
 		fs.NewFileSystem(dryRun),
 	)
-	if err := pn.Run(); err != nil {
+	if err := rn.Run(); err != nil {
 		log.Error(fmt.Sprintf("rename failed: %v", err))
 		os.Exit(1)
 	}
@@ -35,7 +35,7 @@ func main() {
 	os.Exit(0)
 }
 
-func parseArgs() (namer.Args, bool) {
+func parseArgs() (renamer.Args, bool) {
 	flag.Usage = usage
 
 	var dryRun bool
@@ -67,9 +67,9 @@ func parseArgs() (namer.Args, bool) {
 		os.Exit(1)
 	}
 	if flag.NArg() == 1 {
-		return namer.NewArgs(flag.Arg(0), flag.Arg(0), overrides), dryRun
+		return renamer.NewArgs(flag.Arg(0), flag.Arg(0), overrides), dryRun
 	} else {
-		return namer.NewArgs(flag.Arg(0), flag.Arg(1), overrides), dryRun
+		return renamer.NewArgs(flag.Arg(0), flag.Arg(1), overrides), dryRun
 	}
 }
 

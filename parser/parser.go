@@ -8,76 +8,6 @@ import (
 	"unicode"
 )
 
-var (
-	yearRegEx    = regexp.MustCompile(`(?P<year>19|20\d{2})`)
-	seasonRegEx  = regexp.MustCompile(`s(?P<season>\d{2})`)
-	episodeRegEx = regexp.MustCompile(`e(?P<episode>\d{2})`)
-
-	fallbackRegExList = []*regexp.Regexp{
-		// Show Title S01/1 - Title.mkv
-		regexp.MustCompile(`.*s(?P<season>\d{1,2}).*/(?P<episode>\d{1,2}).+`),
-	}
-
-	remuxes = map[string]bool{
-		"remux": true,
-	}
-
-	dualLangs = map[string]bool{
-		"dl": true,
-	}
-
-	propers = map[string]bool{
-		"repack": true,
-		"rerip":  true,
-		"proper": true,
-	}
-)
-
-type Result struct {
-	Title string
-
-	MediaType MediaType
-
-	Year    int
-	Season  int
-	Episode int
-
-	Resolution   Resolution
-	Source       Source
-	Language     Language
-	Remux        bool
-	Proper       bool
-	DualLanguage bool
-}
-
-func (r *Result) IsMovie() bool {
-	return r.MediaType == MediaTypeMovie
-}
-
-func (r *Result) IsTV() bool {
-	return r.MediaType == MediaTypeTV
-}
-
-func (r *Result) VersionInfo() string {
-	tokens := []string{}
-	if r.Language != LangNA {
-		tokens = append(tokens, r.Language.String())
-	}
-	if r.Resolution != ResNA {
-		tokens = append(tokens, r.Resolution.String())
-	}
-	if r.DualLanguage {
-		tokens = append(tokens, "DL")
-	}
-	if r.Source != SourceNA {
-		tokens = append(tokens, r.Source.String())
-	}
-	if r.Remux {
-		tokens = append(tokens, "Remux")
-	}
-	return strings.Join(tokens, ".")
-}
-
 func Parse(source, target string, overrides Result) *Result {
 	srcPath, srcFile := filepath.Split(source)
 	_, srcDir := filepath.Split(strings.TrimRight(srcPath, "/"))
@@ -217,6 +147,10 @@ func (p *parser) parseLanguage() {
 }
 
 func (p *parser) parseDualLanguage() {
+	dualLangs := map[string]bool{
+		"dl": true,
+	}
+
 	for _, t := range p.dirOrFile().tokens {
 		if _, ok := dualLangs[t]; ok {
 			p.result.DualLanguage = true
@@ -225,6 +159,10 @@ func (p *parser) parseDualLanguage() {
 }
 
 func (p *parser) parseRemux() {
+	remuxes := map[string]bool{
+		"remux": true,
+	}
+
 	for _, t := range p.dirOrFile().tokens {
 		if _, ok := remuxes[t]; ok {
 			p.result.Remux = true
@@ -238,6 +176,12 @@ func (p *parser) parseRemux() {
 }
 
 func (p *parser) parseProper() {
+	propers := map[string]bool{
+		"repack": true,
+		"rerip":  true,
+		"proper": true,
+	}
+
 	for _, t := range p.dirOrFile().tokens {
 		if _, ok := propers[t]; ok {
 			p.result.Proper = true
@@ -313,129 +257,4 @@ func tokenize(s string) []string {
 		s,
 	)
 	return strings.Split(t, ";")
-}
-
-func populateResultFromRxpList(rxps []*regexp.Regexp, s string) Result {
-	result := Result{}
-	for _, rxp := range rxps {
-		r := getResultFromRegEx(rxp, s)
-		result.mergeIn(r)
-	}
-	return result
-}
-
-func getBestResultFromRxpList(rxps []*regexp.Regexp, s string) Result {
-	var results []Result
-	for _, rxp := range rxps {
-		result := getResultFromRegEx(rxp, s)
-		results = append(results, result)
-	}
-
-	result, score := Result{}, 0
-	for _, r := range results {
-		if r.score() > score {
-			result, score = r, r.score()
-		}
-	}
-	return result
-}
-
-func getResultFromRegEx(rxp *regexp.Regexp, s string) Result {
-	match := rxp.FindStringSubmatch(s)
-	paramsMap := map[string]string{}
-	for i, name := range rxp.SubexpNames() {
-		if i > 0 && i <= len(match) {
-			paramsMap[name] = match[i]
-		}
-	}
-
-	result := Result{}
-	if match, ok := paramsMap["episode"]; ok {
-		episode, _ := strconv.Atoi(match)
-		result.Episode = episode
-	}
-	if match, ok := paramsMap["season"]; ok {
-		season, _ := strconv.Atoi(match)
-		result.Season = season
-	}
-	if match, ok := paramsMap["year"]; ok {
-		year, _ := strconv.Atoi(match)
-		result.Year = year
-	}
-
-	return result
-}
-
-func (r *Result) score() int {
-	score := 0
-	if r.Title != "" {
-		score += 1
-	}
-	if r.MediaType != MediaTypeUnknown {
-		score += 1
-	}
-	if r.Year != 0 {
-		score += 1
-	}
-	if r.Season != 0 {
-		score += 1
-	}
-	if r.Episode != 0 {
-		score += 1
-	}
-	if r.Resolution != 0 {
-		score += 1
-	}
-	if r.Source != SourceNA {
-		score += 1
-	}
-	if r.Language != LangNA {
-		score += 1
-	}
-	if r.Remux {
-		score += 1
-	}
-	if r.Proper {
-		score += 1
-	}
-	if r.DualLanguage {
-		score += 1
-	}
-	return score
-}
-
-func (r *Result) mergeIn(other Result) {
-	if other.Title != "" {
-		r.Title = other.Title
-	}
-	if other.MediaType != MediaTypeUnknown {
-		r.MediaType = other.MediaType
-	}
-	if other.Year != 0 {
-		r.Year = other.Year
-	}
-	if other.Season != 0 {
-		r.Season = other.Season
-	}
-	if other.Episode != 0 {
-		r.Episode = other.Episode
-	}
-	if other.Resolution != 0 {
-		r.Resolution = other.Resolution
-	}
-	if other.Source != SourceNA {
-		r.Source = other.Source
-	}
-	if other.Language != LangNA {
-		r.Language = other.Language
-	}
-	if other.Remux {
-		r.Remux = other.Remux
-	}
-	if other.Proper {
-		r.Proper = other.Proper
-	}
-	if other.DualLanguage {
-		r.DualLanguage = other.DualLanguage
-	}
 }

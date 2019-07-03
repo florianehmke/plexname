@@ -1,12 +1,12 @@
-package namer_test
+package renamer_test
 
 import (
 	"path/filepath"
 	"testing"
 
 	"github.com/florianehmke/plexname/mock"
-	"github.com/florianehmke/plexname/namer"
 	"github.com/florianehmke/plexname/parser"
+	"github.com/florianehmke/plexname/renamer"
 	"github.com/florianehmke/plexname/search"
 	"github.com/florianehmke/plexname/tmdb"
 	"github.com/florianehmke/plexname/tvdb"
@@ -115,8 +115,8 @@ func TestFixtures(t *testing.T) {
 
 		sourcePath := filepath.FromSlash(tc.sourcePath)
 		targetPath := filepath.FromSlash(tc.targetPath)
-		n := namer.New(
-			namer.NewArgs(sourcePath, targetPath, parser.Result{}),
+		n := renamer.New(
+			renamer.NewArgs(sourcePath, targetPath, parser.Result{}),
 			search.NewSearcher(mockedTMDB, mockedTVDB, mockedPrompter),
 			mockedFS)
 		if err := n.Run(); err != nil {
