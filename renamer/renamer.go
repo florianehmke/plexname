@@ -235,7 +235,7 @@ func (r *Renamer) move(source, target string) error {
 		return fmt.Errorf("move of %s to %s failed: %v", fileName, osNewDir, err)
 	}
 
-	log.Info(fmt.Sprintf("Renamed to: %s", target))
+	log.Info(fmt.Sprintf("Renamed to: %s (from: %s)", target, source))
 	return nil
 }
 
