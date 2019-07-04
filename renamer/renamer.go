@@ -139,7 +139,7 @@ func (r *Renamer) collectNewPaths() error {
 			// See: https://support.plex.tv/articles/naming-and-organizing-your-tv-show-files/
 			extension := strings.ToLower(filepath.Ext(f.fileName()))
 			versionInfo := pr.VersionInfo()
-			tvInfo := fmt.Sprintf("s%02de%02d", pr.Season, pr.Episode)
+			tvInfo := fmt.Sprintf("S%02dE%02d", pr.Season, pr.Episode)
 			fileName := strings.Join(sliceNonEmpty(plexName, tvInfo, versionInfo), " - ")
 			f.newFilePath = f.newPath + "/" + fileName + extension
 		}
@@ -183,7 +183,7 @@ func (r *Renamer) runFile() error {
 	if pr.IsTV() {
 		extension := strings.ToLower(filepath.Ext(file))
 		versionInfo := pr.VersionInfo()
-		tvInfo := fmt.Sprintf("s%02de%02d", pr.Season, pr.Episode)
+		tvInfo := fmt.Sprintf("S%02dE%02d", pr.Season, pr.Episode)
 		fileName := strings.Join(sliceNonEmpty(plexName, tvInfo, versionInfo), " - ")
 		newFilePath = dir + fileName + extension
 	}
