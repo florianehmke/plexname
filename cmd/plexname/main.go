@@ -51,9 +51,6 @@ func parseArgs() (renamer.Args, bool) {
 	flag.StringVar(&proper, "proper", "", "proper release")
 	flag.StringVar(&remux, "remux", "", "remux of source, no encode")
 	flag.StringVar(&dualLang, "dl", "", "dual language")
-	overrides.Proper = boolFor(proper)
-	overrides.Remux = boolFor(remux)
-	overrides.DualLanguage = boolFor(dualLang)
 
 	var mediaType, resolution, source, lang string
 	flag.StringVar(&mediaType, "media-type", "", "media type (movie|tv)")
@@ -64,6 +61,10 @@ func parseArgs() (renamer.Args, bool) {
 	var extensions string
 	flag.StringVar(&extensions, "extensions", "", "move only file with the given extension")
 	flag.Parse()
+
+	overrides.Proper = boolFor(proper)
+	overrides.Remux = boolFor(remux)
+	overrides.DualLanguage = boolFor(dualLang)
 
 	overrides.MediaType = mediaTypeFor(mediaType)
 	overrides.Resolution = resolutionFor(resolution)
