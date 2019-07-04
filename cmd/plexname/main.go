@@ -60,6 +60,9 @@ func parseArgs() (renamer.Args, bool) {
 	flag.StringVar(&resolution, "resolution", "", "resolution: 720p, 1080p etc")
 	flag.StringVar(&source, "source", "", "media source (web-dl, blu-ray etc)")
 	flag.StringVar(&lang, "lang", "", "audio language")
+
+	var extensions string
+	flag.StringVar(&extensions, "extensions", "", "move only file with the given extension")
 	flag.Parse()
 
 	overrides.MediaType = mediaTypeFor(mediaType)
@@ -72,9 +75,9 @@ func parseArgs() (renamer.Args, bool) {
 		os.Exit(1)
 	}
 	if flag.NArg() == 1 {
-		return renamer.NewArgs(flag.Arg(0), flag.Arg(0), overrides), dryRun
+		return renamer.NewArgs(flag.Arg(0), flag.Arg(0), overrides, strings.Split(extensions, ",")), dryRun
 	} else {
-		return renamer.NewArgs(flag.Arg(0), flag.Arg(1), overrides), dryRun
+		return renamer.NewArgs(flag.Arg(0), flag.Arg(1), overrides, strings.Split(extensions, ",")), dryRun
 	}
 }
 
@@ -88,6 +91,9 @@ func usage() {
 	fmt.Println("")
 	fmt.Println("Options:")
 	flag.PrintDefaults()
+	fmt.Println()
+	fmt.Println("Example:")
+	fmt.Println("  plexname -extensions=mkv,mp4 -lang english -remux downloads movies")
 }
 
 func mediaTypeFor(s string) parser.MediaType {

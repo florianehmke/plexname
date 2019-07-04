@@ -116,7 +116,7 @@ func TestFixtures(t *testing.T) {
 		sourcePath := filepath.FromSlash(tc.sourcePath)
 		targetPath := filepath.FromSlash(tc.targetPath)
 		n := renamer.New(
-			renamer.NewArgs(sourcePath, targetPath, parser.Result{}),
+			renamer.NewArgs(sourcePath, targetPath, parser.Result{}, []string{}),
 			search.NewSearcher(mockedTMDB, mockedTVDB, mockedPrompter),
 			mockedFS)
 		if err := n.Run(); err != nil {
