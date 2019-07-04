@@ -59,7 +59,7 @@ var tests = []testFixture{
 		sourcePath:          "../tests/fixtures/tv-parse-from-file",
 		targetPath:          "/dev/null",
 		expectedOldFilePath: "../tests/fixtures/tv-parse-from-file/tv show title/TV-Show.S02E13.German.1080p.DL.DTS.BluRay.AVC.Remux-group.mkv",
-		expectedNewFilePath: "/dev/null/Real TV Show Title/Season 02/Real TV Show Title - s02e13 - German.1080p.DL.Blu-ray.Remux.mkv",
+		expectedNewFilePath: "/dev/null/Real TV Show Title/Season 02/Real TV Show Title - S02E13 - German.1080p.DL.Blu-ray.Remux.mkv",
 		expectedNewPath:     "/dev/null/Real TV Show Title/Season 02/",
 		tvdbResponse:        []tvdb.SearchResult{{Title: "Real TV Show Title"}},
 	},
@@ -67,7 +67,7 @@ var tests = []testFixture{
 		sourcePath:          "../tests/fixtures/tv-with-tvdb-prompt",
 		targetPath:          "/dev/null",
 		expectedOldFilePath: "../tests/fixtures/tv-with-tvdb-prompt/tv show title/TV-Show.S02E13.German.1080p.DL.DTS.BluRay.AVC.Remux-group.mkv",
-		expectedNewFilePath: "/dev/null/Another Real TV Show Title (1981)/Season 02/Another Real TV Show Title (1981) - s02e13 - German.1080p.DL.Blu-ray.Remux.mkv",
+		expectedNewFilePath: "/dev/null/Another Real TV Show Title (1981)/Season 02/Another Real TV Show Title (1981) - S02E13 - German.1080p.DL.Blu-ray.Remux.mkv",
 		expectedNewPath:     "/dev/null/Another Real TV Show Title (1981)/Season 02/",
 		promptResponse:      2,
 		tvdbResponse: []tvdb.SearchResult{
@@ -85,7 +85,7 @@ var tests = []testFixture{
 	{
 		sourcePath:          "../tests/fixtures/tv-standalone-episode-numbers",
 		expectedOldFilePath: "../tests/fixtures/tv-standalone-episode-numbers/Awesome Show S01/1 - Title.mkv",
-		expectedNewFilePath: "../tests/fixtures/tv-standalone-episode-numbers/Awesome Show/Season 01/Awesome Show - s01e01.mkv",
+		expectedNewFilePath: "../tests/fixtures/tv-standalone-episode-numbers/Awesome Show/Season 01/Awesome Show - S01E01.mkv",
 		expectedNewPath:     "../tests/fixtures/tv-standalone-episode-numbers/Awesome Show/Season 01/",
 		tvdbResponse:        []tvdb.SearchResult{{Title: "Awesome Show"}},
 	},
