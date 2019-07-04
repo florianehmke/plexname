@@ -127,7 +127,7 @@ func (r *Renamer) collectNewPaths() error {
 			// See: https://support.plex.tv/articles/200381043-multi-version-movies/
 			extension := strings.ToLower(filepath.Ext(f.fileName()))
 			versionInfo := pr.VersionInfo()
-			fileName := strings.Join(sliceNonEmpty(plexName, versionInfo), " - ")
+			fileName := joinNonEmpty(" - ", plexName, versionInfo)
 			f.newFilePath = f.newPath + "/" + fileName + extension
 		}
 
@@ -139,8 +139,8 @@ func (r *Renamer) collectNewPaths() error {
 			// See: https://support.plex.tv/articles/naming-and-organizing-your-tv-show-files/
 			extension := strings.ToLower(filepath.Ext(f.fileName()))
 			versionInfo := pr.VersionInfo()
-			tvInfo := fmt.Sprintf("S%02dE%02d", pr.Season, pr.Episode)
-			fileName := strings.Join(sliceNonEmpty(plexName, tvInfo, versionInfo), " - ")
+			tvInfo := joinNonEmpty("", toSeasonString(pr.Season), toEpisodeString(pr.Episode1), toEpisodeString(pr.Episode2))
+			fileName := joinNonEmpty(" - ", plexName, tvInfo, versionInfo)
 			f.newFilePath = f.newPath + "/" + fileName + extension
 		}
 		files = append(files, f)
@@ -176,15 +176,15 @@ func (r *Renamer) runFile() error {
 	if pr.IsMovie() {
 		extension := strings.ToLower(filepath.Ext(file))
 		versionInfo := pr.VersionInfo()
-		fileName := strings.Join(sliceNonEmpty(plexName, versionInfo), " - ")
+		fileName := joinNonEmpty(" - ", plexName, versionInfo)
 		newFilePath = dir + fileName + extension
 	}
 
 	if pr.IsTV() {
 		extension := strings.ToLower(filepath.Ext(file))
 		versionInfo := pr.VersionInfo()
-		tvInfo := fmt.Sprintf("S%02dE%02d", pr.Season, pr.Episode)
-		fileName := strings.Join(sliceNonEmpty(plexName, tvInfo, versionInfo), " - ")
+		tvInfo := joinNonEmpty("", toSeasonString(pr.Season), toEpisodeString(pr.Episode1), toEpisodeString(pr.Episode2))
+		fileName := joinNonEmpty(" - ", plexName, tvInfo, versionInfo)
 		newFilePath = dir + fileName + extension
 	}
 
@@ -242,7 +242,7 @@ func (r *Renamer) move(source, target string) error {
 		return fmt.Errorf("move of %s to %s failed: %v", fileName, osNewDir, err)
 	}
 
-	log.Info(fmt.Sprintf("Renamed to: %s (from: %s)", target, source))
+	log.Info(fmt.Sprintf("Renamed:\nSource: %s\nTarget: %s", source, target))
 	return nil
 }
 
@@ -260,12 +260,26 @@ func (r *Renamer) skipBasedOnExtension(s string) bool {
 	return skip
 }
 
-func sliceNonEmpty(strings ...string) []string {
+func toEpisodeString(ep int) string {
+	if ep != 0 {
+		return fmt.Sprintf("E%02d", ep)
+	}
+	return ""
+}
+
+func toSeasonString(s int) string {
+	if s != 0 {
+		return fmt.Sprintf("S%02d", s)
+	}
+	return ""
+}
+
+func joinNonEmpty(sep string, slist ...string) string {
 	var slice []string
-	for _, s := range strings {
+	for _, s := range slist {
 		if s != "" {
 			slice = append(slice, s)
 		}
 	}
-	return slice
+	return strings.Join(slice, sep)
 }

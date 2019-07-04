@@ -89,6 +89,13 @@ var tests = []testFixture{
 		expectedNewPath:     "../tests/fixtures/tv-standalone-episode-numbers/Awesome Show/Season 01/",
 		tvdbResponse:        []tvdb.SearchResult{{Title: "Awesome Show"}},
 	},
+	{
+		sourcePath:          "../tests/fixtures/tv-dual-ep",
+		expectedOldFilePath: "../tests/fixtures/tv-dual-ep/tv show title/Title S01E03E04.mkv",
+		expectedNewFilePath: "../tests/fixtures/tv-dual-ep/Awesome Show/Season 01/Awesome Show - S01E03E04.mkv",
+		expectedNewPath:     "../tests/fixtures/tv-dual-ep/Awesome Show/Season 01/",
+		tvdbResponse:        []tvdb.SearchResult{{Title: "Awesome Show"}},
+	},
 }
 
 func TestFixtures(t *testing.T) {

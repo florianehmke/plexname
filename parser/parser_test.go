@@ -24,11 +24,12 @@ var (
 		"/some/dir/Some Title repack":          {Proper: parser.True},
 		"/some/dir/Some.WEB-DL-HUNDUB.1080P":   {Resolution: parser.R1080, Source: parser.WEBDL, Language: parser.Hungarian},
 		"/some/dir/Some.Title.2012.Remux":      {Year: 2012, Remux: parser.True, Title: "some title"},
-		"/some/dir/Some.Title.S01E02":          {Season: 1, Episode: 2},
+		"/some/dir/Some.Title.S01E02":          {Season: 1, Episode1: 2},
 		"/some/dir/Some.Title.WEB-DL":          {Source: parser.WEBDL},
 		"/some/dir/Some.Title.webrip":          {Source: parser.WEBRip},
 		"/some/dir/Some.Title.WEB-DL.DL":       {Source: parser.WEBDL, DualLanguage: parser.True},
 		"/some/dir/Some.Title.DL":              {DualLanguage: parser.True},
+		"/some/dir/Some.Title.E01E02":          {Episode1: 1, Episode2: 2},
 	}
 )
 
@@ -59,8 +60,11 @@ func compareResult(t *testing.T, expected *parser.Result, got *parser.Result) {
 	if expected.Season != got.Season {
 		t.Errorf("expected season=%d, got season=%d", expected.Season, got.Season)
 	}
-	if expected.Episode != got.Episode {
-		t.Errorf("expected episode=%d, got episode=%d", expected.Episode, got.Episode)
+	if expected.Episode1 != got.Episode1 {
+		t.Errorf("expected episode1=%d, got episode1=%d", expected.Episode1, got.Episode1)
+	}
+	if expected.Episode2 != got.Episode2 {
+		t.Errorf("expected episode2=%d, got episode2=%d", expected.Episode2, got.Episode2)
 	}
 	if expected.Year != got.Year {
 		t.Errorf("expected year=%d, got year=%d", expected.Year, got.Year)
@@ -79,7 +83,7 @@ func TestOverride(t *testing.T) {
 		MediaType:    parser.MediaTypeTV,
 		Year:         1999,
 		Season:       2,
-		Episode:      15,
+		Episode1:     15,
 		Resolution:   parser.R2160,
 		Source:       parser.BluRay,
 		Language:     parser.German,

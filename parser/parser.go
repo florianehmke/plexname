@@ -192,14 +192,20 @@ func (p *parser) parseProper() {
 
 func (p *parser) parseSeasonAndEpisode() {
 	for _, t := range p.dirOrFile.tokens {
-		r := populateResultFromRxpList([]*regexp.Regexp{seasonRegEx, episodeRegEx}, t)
+		var r Result
+		if dualEpisodeRegEx.MatchString(t) {
+			r = populateResultFromRxpList([]*regexp.Regexp{seasonRegEx, dualEpisodeRegEx}, t)
+		} else {
+			r = populateResultFromRxpList([]*regexp.Regexp{seasonRegEx, episodeRegEx}, t)
+		}
 		p.result.mergeIn(r)
 	}
-	if p.result.Episode == 0 || p.result.Season == 0 {
+	if p.result.Episode1 == 0 || p.result.Season == 0 {
 		r := getBestResultFromRxpList(fallbackRegExList, p.dirAndFile.name)
 		if r.score() > 0 {
 			p.result.Season = r.Season
-			p.result.Episode = r.Episode
+			p.result.Episode1 = r.Episode1
+			p.result.Episode2 = r.Episode2
 		}
 	}
 }
@@ -216,7 +222,7 @@ func (p *parser) parseMediaType() {
 			}
 		}
 	}
-	if p.result.Episode != 0 || p.result.Season != 0 {
+	if p.result.Episode1 != 0 || p.result.Season != 0 {
 		p.result.MediaType = MediaTypeTV
 	} else {
 		p.result.MediaType = MediaTypeMovie
