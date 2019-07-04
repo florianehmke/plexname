@@ -75,9 +75,9 @@ func parseArgs() (renamer.Args, bool) {
 		os.Exit(1)
 	}
 	if flag.NArg() == 1 {
-		return renamer.NewArgs(flag.Arg(0), flag.Arg(0), overrides, strings.Split(extensions, ",")), dryRun
+		return renamer.NewArgs(flag.Arg(0), flag.Arg(0), overrides, extSliceFor(extensions)), dryRun
 	} else {
-		return renamer.NewArgs(flag.Arg(0), flag.Arg(1), overrides, strings.Split(extensions, ",")), dryRun
+		return renamer.NewArgs(flag.Arg(0), flag.Arg(1), overrides, extSliceFor(extensions)), dryRun
 	}
 }
 
@@ -141,4 +141,12 @@ func boolFor(s string) parser.ParseBool {
 		return parser.False
 	}
 	return parser.Unknown
+}
+
+func extSliceFor(s string) []string {
+	var slice []string
+	if s != "" {
+		slice = strings.Split(s, ",")
+	}
+	return slice
 }

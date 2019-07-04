@@ -6,9 +6,9 @@ import (
 )
 
 var (
-	yearRegEx    = regexp.MustCompile(`(?P<year>19|20\d{2})`)
-	seasonRegEx  = regexp.MustCompile(`s(?P<season>\d{2})`)
-	episodeRegEx = regexp.MustCompile(`e(?P<episode>\d{2})`)
+	yearRegEx    = regexp.MustCompile(`(?P<year>(19|20)\d{2})`)
+	seasonRegEx  = regexp.MustCompile(`s(?P<season>\d{1,2})`)
+	episodeRegEx = regexp.MustCompile(`e(?P<episode>\d{2,4})`)
 
 	fallbackRegExList = []*regexp.Regexp{
 		// Show Title S01/1 - Title.mkv
