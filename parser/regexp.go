@@ -12,7 +12,7 @@ var (
 
 	fallbackRegExList = []*regexp.Regexp{
 		// Show Title S01/1 - Title.mkv
-		regexp.MustCompile(`.*s(?P<season>\d{1,2}).*/(?P<episode>\d{1,2}).+`),
+		regexp.MustCompile(`.*s(?P<season>\d{1,2}).*/(?P<episode>\d{1,4}).+`),
 	}
 )
 
