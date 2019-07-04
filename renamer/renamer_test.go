@@ -118,7 +118,7 @@ func TestFixtures(t *testing.T) {
 		})
 		mockedPrompter := mock.NewMockPrompter(func(question string) (i int, e error) {
 			return tc.promptResponse, nil
-		}, nil)
+		}, nil, nil)
 
 		sourcePath := filepath.FromSlash(tc.sourcePath)
 		targetPath := filepath.FromSlash(tc.targetPath)
