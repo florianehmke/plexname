@@ -45,6 +45,7 @@ var (
 		"brrip":    BluRay,
 		"webdl":    WEBDL,
 		"ituneshd": WEBDL,
+		"amazonhd": WEBDL,
 		"webrip":   WEBRip,
 		"webhd":    WEBRip,
 		"webx264":  WEBRip,
