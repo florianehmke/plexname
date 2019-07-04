@@ -1,91 +1,31 @@
 package parser
 
 import (
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
 	"unicode"
 )
 
-type MediaType int
+func Parse(source, target string, overrides Result) *Result {
+	srcPath, srcFile := filepath.Split(source)
+	_, srcDir := filepath.Split(strings.TrimRight(srcPath, "/"))
+	srcDirAndFile := srcDir + "/" + srcFile
 
-const (
-	MediaTypeUnknown MediaType = iota
-	MediaTypeMovie
-	MediaTypeTV
-)
+	p := parser{
+		sourcePath: newParseData(source),
+		targetPath: newParseData(target),
 
-var (
-	yearRegEx    = regexp.MustCompile(`19|20\d{2}`)
-	seasonRegEx  = regexp.MustCompile(`s\d{2}`)
-	episodeRegEx = regexp.MustCompile(`e\d{2}`)
+		file:       newParseData(srcFile),
+		dir:        newParseData(srcDir),
+		dirAndFile: newParseData(srcDirAndFile),
 
-	remuxes = map[string]bool{
-		"remux": true,
+		overrides: &overrides,
+		result:    &Result{},
 	}
+	p.setDirOrFile()
 
-	dualLangs = map[string]bool{
-		"dl": true,
-	}
-
-	propers = map[string]bool{
-		"repack": true,
-		"rerip":  true,
-		"proper": true,
-	}
-)
-
-type Result struct {
-	Title string
-
-	MediaType MediaType
-
-	Year    int
-	Season  int
-	Episode int
-
-	Resolution   Resolution
-	Source       Source
-	Language     Language
-	Remux        bool
-	Proper       bool
-	DualLanguage bool
-}
-
-func (r *Result) IsUnknownMediaType() bool {
-	return r.MediaType == MediaTypeUnknown
-}
-
-func (r *Result) IsMovie() bool {
-	return r.MediaType == MediaTypeMovie
-}
-
-func (r *Result) IsTV() bool {
-	return r.MediaType == MediaTypeTV
-}
-
-func (r *Result) VersionInfo() string {
-	tokens := []string{}
-	if r.Language != LangNA {
-		tokens = append(tokens, r.Language.String())
-	}
-	if r.Resolution != ResNA {
-		tokens = append(tokens, r.Resolution.String())
-	}
-	if r.DualLanguage {
-		tokens = append(tokens, "DL")
-	}
-	if r.Source != SourceNA {
-		tokens = append(tokens, r.Source.String())
-	}
-	if r.Remux {
-		tokens = append(tokens, "Remux")
-	}
-	return strings.Join(tokens, ".")
-}
-
-func Parse(releaseName string, overrides Result) *Result {
-	p := newParser(releaseName, overrides)
 	p.parseTitle()
 	p.parseYear()
 	p.parseResolution()
@@ -94,38 +34,57 @@ func Parse(releaseName string, overrides Result) *Result {
 	p.parseDualLanguage()
 	p.parseRemux()
 	p.parseProper()
-	p.parseEpisode()
-	p.parseSeason()
+	p.parseSeasonAndEpisode()
 	p.parseMediaType()
+
+	p.result.mergeIn(overrides)
 	return p.result
 }
 
 type parser struct {
-	overrides     *Result
-	result        *Result
-	releaseName   string
-	cleanedName   string
-	releaseTokens []string
+	sourcePath parseData
+	targetPath parseData
+
+	file       parseData
+	dir        parseData
+	dirAndFile parseData
+	dirOrFile  parseData
+
+	overrides *Result
+	result    *Result
 }
 
-func newParser(releaseName string, overrides Result) *parser {
-	lr := strings.ToLower(releaseName)
-	return &parser{
-		overrides:     &overrides,
-		releaseName:   lr,
-		cleanedName:   clean(lr),
-		releaseTokens: tokenize(lr),
-		result:        &Result{},
+func (p *parser) setDirOrFile() {
+	if p.file.length > p.dir.length {
+		p.dirOrFile = p.file
+	} else if p.dir.length > p.file.length {
+		p.dirOrFile = p.dir
+	} else {
+		p.dirOrFile = p.file
+	}
+}
+
+type parseData struct {
+	name   string
+	length int
+
+	joined string
+	tokens []string
+}
+
+func newParseData(s string) parseData {
+	ls := strings.ToLower(s)
+	return parseData{
+		name:   ls,
+		length: len(ls),
+		joined: clean(ls),
+		tokens: tokenize(ls),
 	}
 }
 
 func (p *parser) parseTitle() {
-	if p.overrides.Title != "" {
-		p.result.Title = p.overrides.Title
-		return
-	}
-	titleTokens := []string{}
-	for _, t := range p.releaseTokens {
+	var titleTokens []string
+	for _, t := range p.dirOrFile.tokens {
 		if yearRegEx.MatchString(t) || seasonRegEx.MatchString(t) || episodeRegEx.MatchString(t) {
 			break
 		}
@@ -135,11 +94,7 @@ func (p *parser) parseTitle() {
 }
 
 func (p *parser) parseYear() {
-	if p.overrides.Year != 0 {
-		p.result.Year = p.overrides.Year
-		return
-	}
-	for _, t := range p.releaseTokens {
+	for _, t := range p.dirOrFile.tokens {
 		if yearRegEx.MatchString(t) {
 			year, err := strconv.Atoi(t)
 			if err == nil {
@@ -150,28 +105,20 @@ func (p *parser) parseYear() {
 }
 
 func (p *parser) parseResolution() {
-	if p.overrides.Resolution != ResNA {
-		p.result.Resolution = p.overrides.Resolution
-		return
-	}
-	for _, t := range p.releaseTokens {
+	for _, t := range p.dirOrFile.tokens {
 		if res, ok := resMap[t]; ok {
 			p.result.Resolution = res
 		}
 	}
 	for k, res := range resMap {
-		if strings.Contains(p.cleanedName, k) {
+		if strings.Contains(p.dirOrFile.joined, k) {
 			p.result.Resolution = res
 		}
 	}
 }
 
 func (p *parser) parseSource() {
-	if p.overrides.Source != SourceNA {
-		p.result.Source = p.overrides.Source
-		return
-	}
-	for _, t := range p.releaseTokens {
+	for _, t := range p.dirOrFile.tokens {
 		if src, ok := srcMap[t]; ok {
 			p.result.Source = src
 		}
@@ -182,115 +129,96 @@ func (p *parser) parseSource() {
 		if len(k) < 5 {
 			continue
 		}
-		if strings.Contains(p.cleanedName, k) {
+		if strings.Contains(p.dirOrFile.joined, k) {
 			p.result.Source = src
 		}
 	}
 }
 
 func (p *parser) parseLanguage() {
-	if p.overrides.Language != LangNA {
-		p.result.Language = p.overrides.Language
-		return
-	}
-	for _, t := range p.releaseTokens {
+	for _, t := range p.dirOrFile.tokens {
 		if lang, ok := langMap[t]; ok {
 			p.result.Language = lang
 		}
 	}
 	for k, lang := range langMap {
-		if strings.Contains(p.cleanedName, k) {
+		if strings.Contains(p.dirOrFile.joined, k) {
 			p.result.Language = lang
 		}
 	}
 }
 
 func (p *parser) parseDualLanguage() {
-	if p.overrides.DualLanguage != false {
-		p.result.DualLanguage = p.overrides.DualLanguage
-		return
-	}
-	for _, t := range p.releaseTokens {
-		if _, ok := dualLangs[t]; ok {
-			p.result.DualLanguage = true
+	for _, t := range p.dirOrFile.tokens {
+		if t == "dl" {
+			count := strings.Count(p.dirOrFile.joined, "dl")
+			webDL := strings.Contains(p.dirOrFile.joined, "webdl")
+			if (!webDL && count == 1) || count > 1 {
+				p.result.DualLanguage = True
+			}
 		}
 	}
 }
 
 func (p *parser) parseRemux() {
-	if p.overrides.Remux != false {
-		p.result.Remux = p.overrides.Remux
-		return
-	}
-	for _, t := range p.releaseTokens {
-		if _, ok := remuxes[t]; ok {
-			p.result.Remux = true
+	for _, t := range p.dirOrFile.tokens {
+		if t == "remux" {
+			p.result.Remux = True
 		}
 	}
-	for k := range remuxes {
-		if strings.Contains(p.cleanedName, k) {
-			p.result.Remux = true
-		}
+	if strings.Contains(p.dirOrFile.joined, "remux") {
+		p.result.Remux = True
 	}
 }
 
 func (p *parser) parseProper() {
-	if p.overrides.Proper != false {
-		p.result.Proper = p.overrides.Proper
-		return
+	propers := map[string]bool{
+		"repack": true,
+		"rerip":  true,
+		"proper": true,
 	}
-	for _, t := range p.releaseTokens {
+
+	for _, t := range p.dirOrFile.tokens {
 		if _, ok := propers[t]; ok {
-			p.result.Proper = true
+			p.result.Proper = True
 		}
 	}
 	for k := range propers {
-		if strings.Contains(p.cleanedName, k) {
-			p.result.Proper = true
+		if strings.Contains(p.dirOrFile.joined, k) {
+			p.result.Proper = True
 		}
 	}
 }
 
-func (p *parser) parseEpisode() {
-	if p.overrides.Episode != 0 {
-		p.result.Episode = p.overrides.Episode
-		return
+func (p *parser) parseSeasonAndEpisode() {
+	for _, t := range p.dirOrFile.tokens {
+		r := populateResultFromRxpList([]*regexp.Regexp{seasonRegEx, episodeRegEx}, t)
+		p.result.mergeIn(r)
 	}
-	for _, t := range p.releaseTokens {
-		e := episodeRegEx.FindString(t)
-		if e != "" {
-			ep, err := strconv.Atoi(e[1:])
-			if err == nil {
-				p.result.Episode = ep
-			}
-		}
-	}
-}
-
-func (p *parser) parseSeason() {
-	if p.overrides.Season != 0 {
-		p.result.Season = p.overrides.Season
-		return
-	}
-	for _, t := range p.releaseTokens {
-		s := seasonRegEx.FindString(t)
-		if s != "" {
-			season, err := strconv.Atoi(s[1:])
-			if err == nil {
-				p.result.Season = season
-			}
+	if p.result.Episode == 0 || p.result.Season == 0 {
+		r := getBestResultFromRxpList(fallbackRegExList, p.dirAndFile.name)
+		if r.score() > 0 {
+			p.result.Season = r.Season
+			p.result.Episode = r.Episode
 		}
 	}
 }
 
 func (p *parser) parseMediaType() {
-	if p.overrides.MediaType != MediaTypeUnknown {
-		p.result.MediaType = p.overrides.MediaType
-		return
+	for _, tokens := range [][]string{
+		p.targetPath.tokens,
+		p.sourcePath.tokens,
+	} {
+		for _, s := range tokens {
+			if mt, ok := mediaTypes[s]; ok {
+				p.result.MediaType = mt
+				return
+			}
+		}
 	}
-	if p.result.Episode != 0 && p.result.Season != 0 {
+	if p.result.Episode != 0 || p.result.Season != 0 {
 		p.result.MediaType = MediaTypeTV
-	} else if p.result.Year != 0 {
+	} else {
 		p.result.MediaType = MediaTypeMovie
 	}
 }

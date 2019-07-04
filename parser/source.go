@@ -17,7 +17,8 @@ const (
 	HDTV
 	SDTV
 	PDTV
-	WEB
+	WEBRip
+	WEBDL
 	DSR
 )
 
@@ -31,7 +32,8 @@ var (
 		HDTV:     "HDTV",
 		SDTV:     "SDTV",
 		PDTV:     "PDTV",
-		WEB:      "WEB",
+		WEBRip:   "WEB-Rip",
+		WEBDL:    "WEB-DL",
 		DSR:      "DSR",
 	}
 
@@ -41,14 +43,14 @@ var (
 		"bd":       BluRay,
 		"bdrip":    BluRay,
 		"brrip":    BluRay,
-		"webdl":    WEB,
-		"webrip":   WEB,
-		"ituneshd": WEB,
-		"webhd":    WEB,
-		"webx264":  WEB,
-		"webx265":  WEB,
-		"webh264":  WEB,
-		"webh265":  WEB,
+		"webdl":    WEBDL,
+		"ituneshd": WEBDL,
+		"webrip":   WEBRip,
+		"webhd":    WEBRip,
+		"webx264":  WEBRip,
+		"webx265":  WEBRip,
+		"webh264":  WEBRip,
+		"webh265":  WEBRip,
 		"tvrip":    TV,
 		"hdtv":     HDTV,
 		"pdtv":     PDTV,

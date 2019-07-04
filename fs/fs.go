@@ -9,7 +9,10 @@ type FileSystem interface {
 	MkdirAll(path string) error
 }
 
-func NewFileSystem() FileSystem {
+func NewFileSystem(noop bool) FileSystem {
+	if noop {
+		return noopFS{}
+	}
 	return osFS{}
 }
 
@@ -22,4 +25,14 @@ func (osFS) Rename(oldpath, newpath string) error {
 
 func (osFS) MkdirAll(path string) error {
 	return os.MkdirAll(path, os.ModePerm)
+}
+
+type noopFS struct{}
+
+func (noopFS) Rename(oldpath, newpath string) error {
+	return nil
+}
+
+func (noopFS) MkdirAll(path string) error {
+	return nil
 }
