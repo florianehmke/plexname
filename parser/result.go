@@ -1,6 +1,16 @@
 package parser
 
-import "strings"
+import (
+	"strings"
+)
+
+type ParseBool int
+
+const (
+	Unknown ParseBool = iota
+	True
+	False
+)
 
 type Result struct {
 	Title string
@@ -14,9 +24,9 @@ type Result struct {
 	Resolution   Resolution
 	Source       Source
 	Language     Language
-	Remux        bool
-	Proper       bool
-	DualLanguage bool
+	Remux        ParseBool
+	Proper       ParseBool
+	DualLanguage ParseBool
 }
 
 func (r *Result) IsMovie() bool {
@@ -35,13 +45,13 @@ func (r *Result) VersionInfo() string {
 	if r.Resolution != ResNA {
 		tokens = append(tokens, r.Resolution.String())
 	}
-	if r.DualLanguage {
+	if r.DualLanguage != Unknown {
 		tokens = append(tokens, "DL")
 	}
 	if r.Source != SourceNA {
 		tokens = append(tokens, r.Source.String())
 	}
-	if r.Remux {
+	if r.Remux != Unknown {
 		tokens = append(tokens, "Remux")
 	}
 	return strings.Join(tokens, ".")
@@ -73,13 +83,13 @@ func (r *Result) score() int {
 	if r.Language != LangNA {
 		score += 1
 	}
-	if r.Remux {
+	if r.Remux != Unknown {
 		score += 1
 	}
-	if r.Proper {
+	if r.Proper != Unknown {
 		score += 1
 	}
-	if r.DualLanguage {
+	if r.DualLanguage != Unknown {
 		score += 1
 	}
 	return score
@@ -110,13 +120,13 @@ func (r *Result) mergeIn(other Result) {
 	if other.Language != LangNA {
 		r.Language = other.Language
 	}
-	if other.Remux {
+	if other.Remux != Unknown {
 		r.Remux = other.Remux
 	}
-	if other.Proper {
+	if other.Proper != Unknown {
 		r.Proper = other.Proper
 	}
-	if other.DualLanguage {
+	if other.DualLanguage != Unknown {
 		r.DualLanguage = other.DualLanguage
 	}
 }

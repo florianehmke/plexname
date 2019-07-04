@@ -21,11 +21,13 @@ var (
 		"/some/dir/Some Title.avi 720p webdl":  {Resolution: parser.R720, Source: parser.WEB},
 		"/some/dir/1080p web dl of Some Title": {Resolution: parser.R1080, Source: parser.WEB},
 		"/some/dir/1080p.web-dl.of.A.Movie":    {Resolution: parser.R1080, Source: parser.WEB},
-		"/some/dir/Some Title repack":          {Proper: true},
+		"/some/dir/Some Title repack":          {Proper: parser.True},
 		"/some/dir/Some.WEB.DL-HUNDUB.1080P":   {Resolution: parser.R1080, Source: parser.WEB, Language: parser.Hungarian},
-		"/some/dir/Some.Title.2012.Remux":      {Year: 2012, Remux: true, Title: "some title"},
+		"/some/dir/Some.Title.2012.Remux":      {Year: 2012, Remux: parser.True, Title: "some title"},
 		"/some/dir/Some.Title.S01E02":          {Season: 1, Episode: 2},
-		"/some/dir/Some.Title.WEB-DL":          {Source: parser.WEB, DualLanguage: false},
+		"/some/dir/Some.Title.WEB-DL":          {Source: parser.WEB},
+		"/some/dir/Some.Title.WEB-DL.DL":       {Source: parser.WEB, DualLanguage: parser.True},
+		"/some/dir/Some.Title.DL":              {DualLanguage: parser.True},
 	}
 )
 
@@ -45,10 +47,10 @@ func compareResult(t *testing.T, expected *parser.Result, got *parser.Result) {
 		t.Errorf("expected source=%s, got source=%s", expected.Source.String(), got.Source.String())
 	}
 	if expected.Proper != got.Proper {
-		t.Errorf("expected proper=%t, got proper=%t", expected.Proper, got.Proper)
+		t.Errorf("expected proper=%d, got proper=%d", expected.Proper, got.Proper)
 	}
 	if expected.Remux != got.Remux {
-		t.Errorf("expected remux=%t, got remux=%t", expected.Remux, got.Remux)
+		t.Errorf("expected remux=%d, got remux=%d", expected.Remux, got.Remux)
 	}
 	if expected.Language != got.Language {
 		t.Errorf("expected language=%d, got language=%d", expected.Language, got.Language)
@@ -66,7 +68,7 @@ func compareResult(t *testing.T, expected *parser.Result, got *parser.Result) {
 		t.Errorf("expected title=%s, got title=%s", expected.Title, got.Title)
 	}
 	if expected.DualLanguage != got.DualLanguage {
-		t.Errorf("expected dual-language=%t, got dual-language=%t", expected.DualLanguage, got.DualLanguage)
+		t.Errorf("expected dual-language=%d, got dual-language=%d", expected.DualLanguage, got.DualLanguage)
 	}
 }
 
@@ -80,9 +82,9 @@ func TestOverride(t *testing.T) {
 		Resolution:   parser.R2160,
 		Source:       parser.BluRay,
 		Language:     parser.German,
-		Remux:        true,
-		Proper:       true,
-		DualLanguage: true,
+		Remux:        parser.True,
+		Proper:       parser.False,
+		DualLanguage: parser.True,
 	}
 	result := parser.Parse("1080p web dl of Some Title", "/dev/null", overrides)
 	if overrides != *result {

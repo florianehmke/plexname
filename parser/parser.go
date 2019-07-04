@@ -153,8 +153,8 @@ func (p *parser) parseDualLanguage() {
 		if t == "dl" {
 			count := strings.Count(p.dirOrFile.joined, "dl")
 			webDL := strings.Contains(p.dirOrFile.joined, "webdl")
-			if count > 1 || !webDL {
-				p.result.DualLanguage = true
+			if (!webDL && count == 1) || count > 1 {
+				p.result.DualLanguage = True
 			}
 		}
 	}
@@ -163,11 +163,11 @@ func (p *parser) parseDualLanguage() {
 func (p *parser) parseRemux() {
 	for _, t := range p.dirOrFile.tokens {
 		if t == "remux" {
-			p.result.Remux = true
+			p.result.Remux = True
 		}
 	}
 	if strings.Contains(p.dirOrFile.joined, "remux") {
-		p.result.Remux = true
+		p.result.Remux = True
 	}
 }
 
@@ -180,12 +180,12 @@ func (p *parser) parseProper() {
 
 	for _, t := range p.dirOrFile.tokens {
 		if _, ok := propers[t]; ok {
-			p.result.Proper = true
+			p.result.Proper = True
 		}
 	}
 	for k := range propers {
 		if strings.Contains(p.dirOrFile.joined, k) {
-			p.result.Proper = true
+			p.result.Proper = True
 		}
 	}
 }

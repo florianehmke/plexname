@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/florianehmke/plexname/config"
 	"github.com/florianehmke/plexname/fs"
@@ -46,9 +47,13 @@ func parseArgs() (renamer.Args, bool) {
 	flag.IntVar(&overrides.Year, "year", 0, "movie/tv year of release")
 	flag.IntVar(&overrides.Season, "season", 0, "tv season of release")
 	flag.IntVar(&overrides.Year, "episode", 0, "tv episode of release")
-	flag.BoolVar(&overrides.Proper, "proper", false, "proper release")
-	flag.BoolVar(&overrides.Remux, "remux", false, "remux of source, no encode")
-	flag.BoolVar(&overrides.DualLanguage, "dl", false, "dual language")
+	var proper, remux, dualLang string
+	flag.StringVar(&proper, "proper", "", "proper release")
+	flag.StringVar(&remux, "remux", "", "remux of source, no encode")
+	flag.StringVar(&dualLang, "dl", "", "dual language")
+	overrides.Proper = boolFor(proper)
+	overrides.Remux = boolFor(remux)
+	overrides.DualLanguage = boolFor(dualLang)
 
 	var mediaType, resolution, source, lang string
 	flag.StringVar(&mediaType, "media-type", "", "media type (movie|tv)")
@@ -119,4 +124,15 @@ func languageFor(s string) parser.Language {
 		os.Exit(1)
 	}
 	return l
+}
+
+func boolFor(s string) parser.ParseBool {
+	ls := strings.ToLower(s)
+	if ls == "true" {
+		return parser.True
+	}
+	if ls == "false" {
+		return parser.False
+	}
+	return parser.Unknown
 }
