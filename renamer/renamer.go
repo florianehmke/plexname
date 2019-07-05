@@ -14,13 +14,6 @@ import (
 	"github.com/florianehmke/plexname/search"
 )
 
-type Args struct {
-	sourcePath string
-	targetPath string
-	overrides  parser.Result
-	extensions []string
-}
-
 type Renamer struct {
 	args Args
 
@@ -28,21 +21,6 @@ type Renamer struct {
 	fs       fs.FileSystem
 
 	files []fileInfo
-}
-
-func NewArgs(source, target string, overrides parser.Result, extensions []string) Args {
-	args := Args{}
-	args.sourcePath = filepath.ToSlash(source)
-	if target == "" {
-		args.targetPath = args.sourcePath
-	} else {
-		args.targetPath = filepath.ToSlash(target)
-	}
-	args.sourcePath = strings.TrimRight(args.sourcePath, "/")
-	args.targetPath = strings.TrimRight(args.targetPath, "/")
-	args.overrides = overrides
-	args.extensions = extensions
-	return args
 }
 
 func New(args Args, searcher search.Searcher, fs fs.FileSystem) *Renamer {
