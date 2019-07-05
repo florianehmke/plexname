@@ -52,6 +52,14 @@ func (s *searcher) SearchMovie(query Query) (Result, error) {
 	for _, r := range response.Results {
 		result = append(result, Result{r.Title, r.Year()})
 	}
+	if len(result) == 0 {
+		fmt.Printf("no search result for title '%s'\n", query.Title)
+		query, err := s.prompter.AskString(fmt.Sprintf("Search again:"))
+		if err != nil {
+			return Result{}, fmt.Errorf("prompt error: %v", err)
+		}
+		return s.SearchMovie(Query{Title: query})
+	}
 	return s.toSingleResult(query, result)
 }
 
@@ -69,14 +77,19 @@ func (s *searcher) SearchTV(query Query) (Result, error) {
 			result = append(result, Result{r.Title, r.Year()})
 		}
 	}
+	if len(result) == 0 {
+		fmt.Printf("no search result for title '%s'\n", query.Title)
+		query, err := s.prompter.AskString(fmt.Sprintf("Search again:"))
+		if err != nil {
+			return Result{}, fmt.Errorf("prompt error: %v", err)
+		}
+		return s.SearchTV(Query{Title: query})
+	}
 	return s.toSingleResult(query, result)
 }
 
 func (s *searcher) toSingleResult(query Query, results []Result) (Result, error) {
 	var result Result
-	if len(results) == 0 {
-		return result, fmt.Errorf("no search result for title '%s'", query.Title)
-	}
 	if len(results) > 1 {
 		choices := []string{fmt.Sprintf("Multiple results found online for %s, pick one of:", query.Title)}
 		for i, r := range results {

@@ -6,13 +6,14 @@ import (
 )
 
 var (
-	yearRegEx    = regexp.MustCompile(`(?P<year>19|20\d{2})`)
-	seasonRegEx  = regexp.MustCompile(`s(?P<season>\d{2})`)
-	episodeRegEx = regexp.MustCompile(`e(?P<episode>\d{2})`)
+	yearRegEx        = regexp.MustCompile(`(?P<year>(19|20)\d{2})`)
+	seasonRegEx      = regexp.MustCompile(`s(?P<season>\d{1,2})`)
+	episodeRegEx     = regexp.MustCompile(`e(?P<episode1>\d{2,4})`)
+	dualEpisodeRegEx = regexp.MustCompile(`e(?P<episode1>\d{2,4})e(?P<episode2>\d{2,4})`)
 
 	fallbackRegExList = []*regexp.Regexp{
 		// Show Title S01/1 - Title.mkv
-		regexp.MustCompile(`.*s(?P<season>\d{1,2}).*/(?P<episode>\d{1,2}).+`),
+		regexp.MustCompile(`.*s(?P<season>\d{1,2}).*/(?P<episode1>\d{1,4}).+`),
 	}
 )
 
@@ -51,10 +52,6 @@ func getResultFromRegEx(rxp *regexp.Regexp, s string) Result {
 	}
 
 	result := Result{}
-	if match, ok := paramsMap["episode"]; ok {
-		episode, _ := strconv.Atoi(match)
-		result.Episode = episode
-	}
 	if match, ok := paramsMap["season"]; ok {
 		season, _ := strconv.Atoi(match)
 		result.Season = season
@@ -63,6 +60,13 @@ func getResultFromRegEx(rxp *regexp.Regexp, s string) Result {
 		year, _ := strconv.Atoi(match)
 		result.Year = year
 	}
-
+	if match, ok := paramsMap["episode1"]; ok {
+		episode, _ := strconv.Atoi(match)
+		result.Episode1 = episode
+	}
+	if match, ok := paramsMap["episode2"]; ok {
+		episode, _ := strconv.Atoi(match)
+		result.Episode2 = episode
+	}
 	return result
 }

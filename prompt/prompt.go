@@ -12,6 +12,7 @@ import (
 type Prompter interface {
 	AskNumber(question string) (int, error)
 	Confirm(question string) (bool, error)
+	AskString(question string) (string, error)
 }
 
 type prompter struct {
@@ -35,6 +36,20 @@ func (p *prompter) AskNumber(question string) (int, error) {
 		return p.AskNumber(question)
 	}
 	return n, nil
+}
+
+func (p *prompter) AskString(question string) (string, error) {
+	r := bufio.NewReader(p.reader)
+	fmt.Println(question)
+	res, err := r.ReadString('\n')
+	if err != nil {
+		return "", fmt.Errorf("ask string prompt failed: %v", err)
+	}
+	if res == "" {
+		fmt.Printf("no text given: %v\n", err)
+		return p.AskString(question)
+	}
+	return res, nil
 }
 
 func (p *prompter) Confirm(question string) (bool, error) {

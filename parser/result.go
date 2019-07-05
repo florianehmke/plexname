@@ -17,9 +17,10 @@ type Result struct {
 
 	MediaType MediaType
 
-	Year    int
-	Season  int
-	Episode int
+	Year     int
+	Season   int
+	Episode1 int
+	Episode2 int
 
 	Resolution   Resolution
 	Source       Source
@@ -71,7 +72,7 @@ func (r *Result) score() int {
 	if r.Season != 0 {
 		score += 1
 	}
-	if r.Episode != 0 {
+	if r.Episode1 != 0 {
 		score += 1
 	}
 	if r.Resolution != 0 {
@@ -108,8 +109,11 @@ func (r *Result) mergeIn(other Result) {
 	if other.Season != 0 {
 		r.Season = other.Season
 	}
-	if other.Episode != 0 {
-		r.Episode = other.Episode
+	if other.Episode1 != 0 {
+		r.Episode1 = other.Episode1
+	}
+	if other.Episode2 != 0 {
+		r.Episode2 = other.Episode2
 	}
 	if other.Resolution != 0 {
 		r.Resolution = other.Resolution

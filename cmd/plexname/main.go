@@ -51,16 +51,20 @@ func parseArgs() (renamer.Args, bool) {
 	flag.StringVar(&proper, "proper", "", "proper release")
 	flag.StringVar(&remux, "remux", "", "remux of source, no encode")
 	flag.StringVar(&dualLang, "dl", "", "dual language")
-	overrides.Proper = boolFor(proper)
-	overrides.Remux = boolFor(remux)
-	overrides.DualLanguage = boolFor(dualLang)
 
 	var mediaType, resolution, source, lang string
 	flag.StringVar(&mediaType, "media-type", "", "media type (movie|tv)")
 	flag.StringVar(&resolution, "resolution", "", "resolution: 720p, 1080p etc")
 	flag.StringVar(&source, "source", "", "media source (web-dl, blu-ray etc)")
 	flag.StringVar(&lang, "lang", "", "audio language")
+
+	var extensions string
+	flag.StringVar(&extensions, "extensions", "", "move only file with the given extension")
 	flag.Parse()
+
+	overrides.Proper = boolFor(proper)
+	overrides.Remux = boolFor(remux)
+	overrides.DualLanguage = boolFor(dualLang)
 
 	overrides.MediaType = mediaTypeFor(mediaType)
 	overrides.Resolution = resolutionFor(resolution)
@@ -72,9 +76,9 @@ func parseArgs() (renamer.Args, bool) {
 		os.Exit(1)
 	}
 	if flag.NArg() == 1 {
-		return renamer.NewArgs(flag.Arg(0), flag.Arg(0), overrides), dryRun
+		return renamer.NewArgs(flag.Arg(0), flag.Arg(0), overrides, extSliceFor(extensions)), dryRun
 	} else {
-		return renamer.NewArgs(flag.Arg(0), flag.Arg(1), overrides), dryRun
+		return renamer.NewArgs(flag.Arg(0), flag.Arg(1), overrides, extSliceFor(extensions)), dryRun
 	}
 }
 
@@ -88,6 +92,9 @@ func usage() {
 	fmt.Println("")
 	fmt.Println("Options:")
 	flag.PrintDefaults()
+	fmt.Println()
+	fmt.Println("Example:")
+	fmt.Println("  plexname -extensions=mkv,mp4 -lang english -remux downloads movies")
 }
 
 func mediaTypeFor(s string) parser.MediaType {
@@ -135,4 +142,12 @@ func boolFor(s string) parser.ParseBool {
 		return parser.False
 	}
 	return parser.Unknown
+}
+
+func extSliceFor(s string) []string {
+	var slice []string
+	if s != "" {
+		slice = strings.Split(s, ",")
+	}
+	return slice
 }
