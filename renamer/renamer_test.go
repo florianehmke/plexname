@@ -96,6 +96,13 @@ var tests = []testFixture{
 		expectedNewPath:     "../tests/fixtures/tv-dual-ep/Awesome Show/Season 01/",
 		tvdbResponse:        []tvdb.SearchResult{{Title: "Awesome Show"}},
 	},
+	{
+		sourcePath:          "../tests/fixtures/tv-long-season-folder-name",
+		expectedOldFilePath: "../tests/fixtures/tv-long-season-folder-name/A.Very.Long.Show.Name.2000.German.DL.1080p.BluRay/Title.S01E06.mkv",
+		expectedNewFilePath: "../tests/fixtures/tv-long-season-folder-name/Awesome Show (2000)/Season 01/Awesome Show (2000) - S01E06 - German.1080p.DL.Blu-ray.mkv",
+		expectedNewPath:     "../tests/fixtures/tv-long-season-folder-name/Awesome Show (2000)/Season 01/",
+		tvdbResponse:        []tvdb.SearchResult{{Title: "Awesome Show", FirstAired: "2000-01-01"}},
+	},
 }
 
 func TestFixtures(t *testing.T) {
@@ -123,7 +130,7 @@ func TestFixtures(t *testing.T) {
 		sourcePath := filepath.FromSlash(tc.sourcePath)
 		targetPath := filepath.FromSlash(tc.targetPath)
 		n := renamer.New(
-			renamer.NewArgs(sourcePath, targetPath, parser.Result{}, []string{}, false),
+			renamer.NewArgs(sourcePath, targetPath, parser.Result{}, []string{}, false, false, false),
 			search.NewSearcher(mockedTMDB, mockedTVDB, mockedPrompter),
 			mockedFS)
 		if err := n.Run(); err != nil {

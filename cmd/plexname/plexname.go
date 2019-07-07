@@ -26,7 +26,7 @@ func main() {
 			tvdb.NewClient(tvdb.BaseURL, config.GetToken("tvdb")),
 			prompt.NewPrompter(),
 		),
-		fs.NewFileSystem(arguments.DryRun()),
+		fs.NewFileSystem(arguments.DryRun),
 	)
 
 	if err := r.Run(); err != nil {
