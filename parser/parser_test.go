@@ -100,6 +100,17 @@ var parserTests = []parserTest{
 		toParse:      "Some.Title.E01E02",
 		expectations: parser.Result{Episode1: 1, Episode2: 2},
 	},
+	{
+		toParse: "Some.Title.S04E01.GERMAN.DL.1080p.BluRay/the200-1080p.mkv",
+		expectations: parser.Result{
+			Season:       4,
+			Language:     parser.German,
+			DualLanguage: parser.True,
+			Resolution:   parser.R1080,
+			Source:       parser.BluRay,
+			Episode1:     1,
+		},
+	},
 }
 
 func TestParse(t *testing.T) {

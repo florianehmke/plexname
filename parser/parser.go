@@ -61,7 +61,7 @@ func (p *parser) parseMediaType() {
 			return
 		}
 	}
-	if episodeRegEx.MatchString(p.parseData.joined) && seasonRegEx.MatchString(p.parseData.joined) {
+	if episodeRegEx.sub.MatchString(p.parseData.joined) && seasonRegEx.sub.MatchString(p.parseData.joined) {
 		p.result.MediaType = MediaTypeTV
 	} else {
 		for _, r := range tvAlternativeRegExList {
@@ -77,7 +77,7 @@ func (p *parser) parseMediaType() {
 func (p *parser) parseTitle() {
 	var titleTokens []string
 	for _, t := range p.parseData.tokens {
-		if yearRegEx.MatchString(t) || seasonRegEx.MatchString(t) || episodeRegEx.MatchString(t) {
+		if yearRegEx.full.MatchString(t) || seasonRegEx.full.MatchString(t) || episodeRegEx.full.MatchString(t) {
 			break
 		}
 		titleTokens = append(titleTokens, t)
@@ -87,7 +87,7 @@ func (p *parser) parseTitle() {
 
 func (p *parser) parseYear() {
 	for _, t := range p.parseData.tokens {
-		if yearRegEx.MatchString(t) {
+		if yearRegEx.full.MatchString(t) {
 			year, err := strconv.Atoi(t)
 			if err == nil {
 				p.result.Year = year
@@ -185,10 +185,17 @@ func (p *parser) parseProper() {
 func (p *parser) parseSeasonAndEpisode() {
 	for _, t := range p.parseData.tokens {
 		var r Result
-		if dualEpisodeRegEx.MatchString(t) {
-			r = populateResultFromRxpList([]*regexp.Regexp{seasonRegEx, dualEpisodeRegEx}, t)
+		if dualEpisode.episode.sub.MatchString(t) {
+			r = populateResultFromRxpList([]*regexp.Regexp{
+				dualEpisode.episode.full,
+				dualEpisode.complete.full,
+			}, t)
 		} else {
-			r = populateResultFromRxpList([]*regexp.Regexp{seasonRegEx, episodeRegEx}, t)
+			r = populateResultFromRxpList([]*regexp.Regexp{
+				singleEpisode.episode.full,
+				singleEpisode.season.full,
+				singleEpisode.complete.full,
+			}, t)
 		}
 		p.result.mergeIn(r)
 	}
