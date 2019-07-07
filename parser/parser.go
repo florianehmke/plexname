@@ -77,7 +77,7 @@ func (p *parser) parseMediaType() {
 func (p *parser) parseTitle() {
 	var titleTokens []string
 	for _, t := range p.parseData.tokens {
-		if yearRegEx.full.MatchString(t) || seasonRegEx.full.MatchString(t) || episodeRegEx.full.MatchString(t) {
+		if yearRegEx.full.MatchString(t) || singleEpisode.matchFull(t) || dualEpisode.matchFull(t) {
 			break
 		}
 		titleTokens = append(titleTokens, t)

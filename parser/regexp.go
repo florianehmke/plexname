@@ -17,6 +17,10 @@ type tvrxp struct {
 	complete regex // ..S01E02..
 }
 
+func (r *tvrxp) matchFull(s string) bool {
+	return r.season.full.MatchString(s) || r.episode.full.MatchString(s) || r.complete.full.MatchString(s)
+}
+
 func mustCompile(str string) regex {
 	return regex{
 		full: regexp.MustCompile(fmt.Sprintf("^%s$", str)),

@@ -77,6 +77,10 @@ var parserTests = []parserTest{
 		expectations: parser.Result{Year: 2012, Remux: parser.True, Title: "some title"},
 	},
 	{
+		toParse:      "Some.Title.S04E01",
+		expectations: parser.Result{Season: 4, Episode1: 1, Title: "some title"},
+	},
+	{
 		toParse:      "Some.Title.S01E02",
 		expectations: parser.Result{Season: 1, Episode1: 2},
 	},
