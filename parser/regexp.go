@@ -11,7 +11,7 @@ var (
 	episodeRegEx     = regexp.MustCompile(`e(?P<episode1>\d{2,4})`)
 	dualEpisodeRegEx = regexp.MustCompile(`e(?P<episode1>\d{2,4})e(?P<episode2>\d{2,4})`)
 
-	fallbackRegExList = []*regexp.Regexp{
+	tvAlternativeRegExList = []*regexp.Regexp{
 		// Show Title S01/1 - Title.mkv
 		regexp.MustCompile(`.*s(?P<season>\d{1,2}).*/(?P<episode1>\d{1,4}).+`),
 	}

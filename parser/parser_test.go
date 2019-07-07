@@ -6,42 +6,111 @@ import (
 	"github.com/florianehmke/plexname/parser"
 )
 
-var (
-	qualityParserTests = map[string]parser.Result{
-		"/some/dir/Some Title":                 {},
-		"/some/dir/Some Title HDTV":            {Source: parser.HDTV},
-		"/some/dir/Some Title PDTV":            {Source: parser.PDTV},
-		"/some/dir/Some Title SDTV":            {Source: parser.SDTV},
-		"/some/dir/Some Title TVRip":           {Source: parser.TV},
-		"/some/dir/Some Title BD":              {Source: parser.BluRay},
-		"/some/dir/Some Title BR-Rip":          {Source: parser.BluRay},
-		"/some/dir/Some Title Blu-Ray":         {Source: parser.BluRay},
-		"/some/dir/Some Title DVD":             {Source: parser.DVD},
-		"/some/dir/Some Title.avi 720p":        {Resolution: parser.R720},
-		"/some/dir/Some Title.avi 720p webdl":  {Resolution: parser.R720, Source: parser.WEBDL},
-		"/some/dir/1080p web dl of Some Title": {Resolution: parser.R1080, Source: parser.WEBDL},
-		"/some/dir/1080p.web-dl.of.A.Movie":    {Resolution: parser.R1080, Source: parser.WEBDL},
-		"/some/dir/Some Title repack":          {Proper: parser.True},
-		"/some/dir/Some.WEB-DL-HUNDUB.1080P":   {Resolution: parser.R1080, Source: parser.WEBDL, Language: parser.Hungarian},
-		"/some/dir/Some.Title.2012.Remux":      {Year: 2012, Remux: parser.True, Title: "some title"},
-		"/some/dir/Some.Title.S01E02":          {Season: 1, Episode1: 2},
-		"/some/dir/Some.Title.WEB-DL":          {Source: parser.WEBDL},
-		"/some/dir/Some.Title.webrip":          {Source: parser.WEBRip},
-		"/some/dir/Some.Title.WEB-DL.DL":       {Source: parser.WEBDL, DualLanguage: parser.True},
-		"/some/dir/Some.Title.DL":              {DualLanguage: parser.True},
-		"/some/dir/Some.Title.E01E02":          {Episode1: 1, Episode2: 2},
-	}
-)
+type parserTest struct {
+	toParse      string
+	expectations parser.Result
+}
+
+var parserTests = []parserTest{
+	{
+		toParse:      "Some Title",
+		expectations: parser.Result{},
+	},
+	{
+		toParse:      "Some Title HDTV",
+		expectations: parser.Result{Source: parser.HDTV},
+	},
+	{
+		toParse:      "Some Title PDTV",
+		expectations: parser.Result{Source: parser.PDTV},
+	},
+	{
+		toParse:      "Some Title SDTV",
+		expectations: parser.Result{Source: parser.SDTV},
+	},
+	{
+		toParse:      "Some Title TVRip",
+		expectations: parser.Result{Source: parser.TV},
+	},
+	{
+		toParse:      "Some Title BD",
+		expectations: parser.Result{Source: parser.BluRay},
+	},
+	{
+		toParse:      "Some Title BR-Rip",
+		expectations: parser.Result{Source: parser.BluRay},
+	},
+	{
+		toParse:      "Some Title Blu-Ray",
+		expectations: parser.Result{Source: parser.BluRay},
+	},
+	{
+		toParse:      "Some Title DVD",
+		expectations: parser.Result{Source: parser.DVD},
+	},
+	{
+		toParse:      "Some Title.avi 720p",
+		expectations: parser.Result{Resolution: parser.R720},
+	},
+	{
+		toParse:      "Some Title.avi 720p webdl",
+		expectations: parser.Result{Resolution: parser.R720, Source: parser.WEBDL},
+	},
+	{
+		toParse:      "1080p web dl of Some Title",
+		expectations: parser.Result{Resolution: parser.R1080, Source: parser.WEBDL},
+	},
+	{
+		toParse:      "1080p.web-dl.of.A.Movie",
+		expectations: parser.Result{Resolution: parser.R1080, Source: parser.WEBDL},
+	},
+	{
+		toParse:      "Some Title repack",
+		expectations: parser.Result{Proper: parser.True},
+	},
+	{
+		toParse:      "Some.WEB-DL-HUNDUB.1080P",
+		expectations: parser.Result{Resolution: parser.R1080, Source: parser.WEBDL, Language: parser.Hungarian},
+	},
+	{
+		toParse:      "Some.Title.2012.Remux",
+		expectations: parser.Result{Year: 2012, Remux: parser.True, Title: "some title"},
+	},
+	{
+		toParse:      "Some.Title.S01E02",
+		expectations: parser.Result{Season: 1, Episode1: 2},
+	},
+	{
+		toParse:      "Some.Title.WEB-DL",
+		expectations: parser.Result{Source: parser.WEBDL},
+	},
+	{
+		toParse:      "Some.Title.webrip",
+		expectations: parser.Result{Source: parser.WEBRip},
+	},
+	{
+		toParse:      "Some.Title.WEB-DL.DL",
+		expectations: parser.Result{Source: parser.WEBDL, DualLanguage: parser.True},
+	},
+	{
+		toParse:      "Some.Title.DL",
+		expectations: parser.Result{DualLanguage: parser.True},
+	},
+	{
+		toParse:      "Some.Title.E01E02",
+		expectations: parser.Result{Episode1: 1, Episode2: 2},
+	},
+}
 
 func TestParse(t *testing.T) {
-	for title, expected := range qualityParserTests {
-		t.Logf("Testing title: %s", title)
-		got := parser.Parse(title, "/dev/null", parser.Result{})
-		compareResult(t, &expected, got)
+	for _, test := range parserTests {
+		t.Logf("Testing string: %s", test.toParse)
+		got := parser.Parse(test.toParse, parser.Result{})
+		compareResult(t, test.expectations, got)
 	}
 }
 
-func compareResult(t *testing.T, expected *parser.Result, got *parser.Result) {
+func compareResult(t *testing.T, expected parser.Result, got parser.Result) {
 	if expected.Resolution != got.Resolution {
 		t.Errorf("expected resolution=%s, got resolution=%s", expected.Resolution.String(), got.Resolution.String())
 	}
@@ -91,8 +160,8 @@ func TestOverride(t *testing.T) {
 		Proper:       parser.False,
 		DualLanguage: parser.True,
 	}
-	result := parser.Parse("1080p web dl of Some Title", "/dev/null", overrides)
-	if overrides != *result {
+	result := parser.Parse("1080p web dl of Some Title", overrides)
+	if overrides != result {
 		t.Errorf("expected overrides to have an effect")
 	}
 }

@@ -8,7 +8,7 @@ import (
 	"github.com/florianehmke/plexname/renamer"
 )
 
-func TestGetArgsFromFlags(t *testing.T) {
+func TestGetParametersFromFlags(t *testing.T) {
 	oldArgs := os.Args
 	defer func() { os.Args = oldArgs }()
 
@@ -28,21 +28,29 @@ func TestGetArgsFromFlags(t *testing.T) {
 		"-source", "bluray",
 		"-title", "Some Title",
 		"-year", "1999",
+		"-only-dir",
+		"-only-file",
 		"some/path",
 		"some/other/path",
 	}
-	args := renamer.GetArgsFromFlags()
-	if args.SourcePath() != "some/path" {
+	args := renamer.GetParametersFromFlags()
+	if args.SourcePath != "some/path" {
 		t.Error("expected different source path")
 	}
-	if args.TargetPath() != "some/other/path" {
+	if args.TargetPath != "some/other/path" {
 		t.Error("expected different target path")
 	}
-	if args.DryRun() != true {
+	if args.DryRun != true {
 		t.Error("expected different dryRun flag value")
 	}
-	if len(args.Extensions()) != 2 {
+	if len(args.Extensions) != 2 {
 		t.Error("expected 2 extensions")
+	}
+	if !args.OnlyDir {
+		t.Error("expected -only-dir to have an effect")
+	}
+	if !args.OnlyFile {
+		t.Error("expected -only-file to have an effect")
 	}
 	expectedOverrides := parser.Result{
 		Title:        "Some Title",
@@ -58,7 +66,7 @@ func TestGetArgsFromFlags(t *testing.T) {
 		Source:       parser.BluRay,
 		Year:         1999,
 	}
-	if args.Overrides() != expectedOverrides {
+	if args.Overrides != expectedOverrides {
 		t.Error("expected different overrides")
 	}
 }

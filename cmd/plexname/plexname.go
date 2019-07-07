@@ -18,7 +18,7 @@ import (
 func main() {
 	flag.Usage = usage
 
-	arguments := renamer.GetArgsFromFlags()
+	arguments := renamer.GetParametersFromFlags()
 	r := renamer.New(
 		arguments,
 		search.NewSearcher(
@@ -26,7 +26,7 @@ func main() {
 			tvdb.NewClient(tvdb.BaseURL, config.GetToken("tvdb")),
 			prompt.NewPrompter(),
 		),
-		fs.NewFileSystem(arguments.DryRun()),
+		fs.NewFileSystem(arguments.DryRun),
 	)
 
 	if err := r.Run(); err != nil {

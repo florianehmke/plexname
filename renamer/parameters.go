@@ -10,31 +10,36 @@ import (
 	"github.com/florianehmke/plexname/parser"
 )
 
-type Args struct {
-	sourcePath string
-	targetPath string
-	overrides  parser.Result
-	extensions []string
-	dryRun     bool
+type Parameters struct {
+	SourcePath string
+	TargetPath string
+	Overrides  parser.Result
+	Extensions []string
+
+	DryRun bool
+
+	OnlyFile bool
+	OnlyDir  bool
 }
 
-func NewArgs(source, target string, overrides parser.Result, extensions []string, dryRun bool) Args {
-	args := Args{}
-	args.sourcePath = filepath.ToSlash(source)
-	if target == "" {
-		args.targetPath = args.sourcePath
-	} else {
-		args.targetPath = filepath.ToSlash(target)
+func NewParameters(source, target string, overrides parser.Result, extensions []string, dryRun, onlyFile, onlyDir bool) Parameters {
+	targetPath := target
+	if targetPath == "" {
+		targetPath = source
 	}
-	args.sourcePath = strings.TrimRight(args.sourcePath, "/")
-	args.targetPath = strings.TrimRight(args.targetPath, "/")
-	args.overrides = overrides
-	args.extensions = extensions
-	args.dryRun = dryRun
-	return args
+
+	return Parameters{
+		SourcePath: strings.TrimRight(filepath.ToSlash(source), "/"),
+		TargetPath: strings.TrimRight(filepath.ToSlash(targetPath), "/"),
+		Overrides:  overrides,
+		Extensions: extensions,
+		DryRun:     dryRun,
+		OnlyFile:   onlyFile,
+		OnlyDir:    onlyDir,
+	}
 }
 
-func GetArgsFromFlags() Args {
+func GetParametersFromFlags() Parameters {
 	var dryRun bool
 	flag.BoolVar(&dryRun, "dry", false, "do a dry run")
 
@@ -57,6 +62,10 @@ func GetArgsFromFlags() Args {
 
 	var extensions string
 	flag.StringVar(&extensions, "extensions", "", "move only file with the given extension")
+
+	var onlyDir, onlyFile bool
+	flag.BoolVar(&onlyDir, "only-dir", false, "parse only the directory name")
+	flag.BoolVar(&onlyFile, "only-file", false, "parse only file name")
 	flag.Parse()
 
 	overrides.Proper = boolFor(proper)
@@ -72,11 +81,16 @@ func GetArgsFromFlags() Args {
 		flag.Usage()
 		os.Exit(1)
 	}
+	var sourcePath, targetPath string
+	sourcePath = flag.Arg(0)
 	if flag.NArg() == 1 {
-		return NewArgs(flag.Arg(0), flag.Arg(0), overrides, extSliceFor(extensions), dryRun)
+		targetPath = sourcePath
 	} else {
-		return NewArgs(flag.Arg(0), flag.Arg(1), overrides, extSliceFor(extensions), dryRun)
+		targetPath = flag.Arg(1)
 	}
+
+	return NewParameters(sourcePath, targetPath, overrides, splitExtensions(extensions), dryRun, onlyFile, onlyDir)
+
 }
 
 func mediaTypeFor(s string) parser.MediaType {
@@ -126,30 +140,10 @@ func boolFor(s string) parser.ParseBool {
 	return parser.Unknown
 }
 
-func extSliceFor(s string) []string {
+func splitExtensions(s string) []string {
 	var slice []string
 	if s != "" {
 		slice = strings.Split(s, ",")
 	}
 	return slice
-}
-
-func (a *Args) SourcePath() string {
-	return a.sourcePath
-}
-
-func (a *Args) TargetPath() string {
-	return a.targetPath
-}
-
-func (a *Args) Overrides() parser.Result {
-	return a.overrides
-}
-
-func (a *Args) Extensions() []string {
-	return a.extensions
-}
-
-func (a *Args) DryRun() bool {
-	return a.dryRun
 }
