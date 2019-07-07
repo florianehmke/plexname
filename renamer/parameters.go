@@ -10,7 +10,7 @@ import (
 	"github.com/florianehmke/plexname/parser"
 )
 
-type Args struct {
+type Parameters struct {
 	SourcePath string
 	TargetPath string
 	Overrides  parser.Result
@@ -22,13 +22,13 @@ type Args struct {
 	OnlyDir  bool
 }
 
-func NewArgs(source, target string, overrides parser.Result, extensions []string, dryRun, onlyFile, onlyDir bool) Args {
+func NewParameters(source, target string, overrides parser.Result, extensions []string, dryRun, onlyFile, onlyDir bool) Parameters {
 	targetPath := target
 	if targetPath == "" {
 		targetPath = source
 	}
 
-	return Args{
+	return Parameters{
 		SourcePath: strings.TrimRight(filepath.ToSlash(source), "/"),
 		TargetPath: strings.TrimRight(filepath.ToSlash(targetPath), "/"),
 		Overrides:  overrides,
@@ -39,7 +39,7 @@ func NewArgs(source, target string, overrides parser.Result, extensions []string
 	}
 }
 
-func GetArgsFromFlags() Args {
+func GetParametersFromFlags() Parameters {
 	var dryRun bool
 	flag.BoolVar(&dryRun, "dry", false, "do a dry run")
 
@@ -81,11 +81,16 @@ func GetArgsFromFlags() Args {
 		flag.Usage()
 		os.Exit(1)
 	}
+	var sourcePath, targetPath string
+	sourcePath = flag.Arg(0)
 	if flag.NArg() == 1 {
-		return NewArgs(flag.Arg(0), flag.Arg(0), overrides, extSliceFor(extensions), dryRun, onlyFile, onlyDir)
+		targetPath = sourcePath
 	} else {
-		return NewArgs(flag.Arg(0), flag.Arg(1), overrides, extSliceFor(extensions), dryRun, onlyFile, onlyDir)
+		targetPath = flag.Arg(1)
 	}
+
+	return NewParameters(sourcePath, targetPath, overrides, splitExtensions(extensions), dryRun, onlyFile, onlyDir)
+
 }
 
 func mediaTypeFor(s string) parser.MediaType {
@@ -135,7 +140,7 @@ func boolFor(s string) parser.ParseBool {
 	return parser.Unknown
 }
 
-func extSliceFor(s string) []string {
+func splitExtensions(s string) []string {
 	var slice []string
 	if s != "" {
 		slice = strings.Split(s, ",")

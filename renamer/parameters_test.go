@@ -8,7 +8,7 @@ import (
 	"github.com/florianehmke/plexname/renamer"
 )
 
-func TestGetArgsFromFlags(t *testing.T) {
+func TestGetParametersFromFlags(t *testing.T) {
 	oldArgs := os.Args
 	defer func() { os.Args = oldArgs }()
 
@@ -33,7 +33,7 @@ func TestGetArgsFromFlags(t *testing.T) {
 		"some/path",
 		"some/other/path",
 	}
-	args := renamer.GetArgsFromFlags()
+	args := renamer.GetParametersFromFlags()
 	if args.SourcePath != "some/path" {
 		t.Error("expected different source path")
 	}

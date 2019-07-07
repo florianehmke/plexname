@@ -1,35 +1,17 @@
 package parser
 
 import (
-	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
 	"unicode"
 )
 
-func Parse(source, target string, onlyFile, onlyDir bool, overrides Result) *Result {
-	srcPath, srcFile := filepath.Split(source)
-	_, srcDir := filepath.Split(strings.TrimRight(srcPath, "/"))
-	srcdirAndFile := srcDir + "/" + srcFile
-
-	var toParse parseData
-	if onlyFile {
-		toParse = newParseData(srcFile)
-	} else if onlyDir {
-		toParse = newParseData(srcDir)
-	} else {
-		toParse = newParseData(srcdirAndFile)
-	}
-
+func Parse(s string, overrides Result) Result {
 	p := parser{
-		sourcePath: newParseData(source),
-		targetPath: newParseData(target),
-
-		parseData: toParse,
-
-		overrides: &overrides,
-		result:    &Result{},
+		parseData: newParseData(s),
+		overrides: overrides,
+		result:    Result{},
 	}
 
 	p.parseMediaType()
@@ -48,18 +30,15 @@ func Parse(source, target string, onlyFile, onlyDir bool, overrides Result) *Res
 }
 
 type parser struct {
-	sourcePath parseData
-	targetPath parseData
-
 	parseData parseData
 
-	overrides *Result
-	result    *Result
+	overrides Result
+	result    Result
 }
 
 type parseData struct {
-	name   string
-	length int
+	toParse string
+	length  int
 
 	joined string
 	tokens []string
@@ -68,28 +47,29 @@ type parseData struct {
 func newParseData(s string) parseData {
 	ls := strings.ToLower(s)
 	return parseData{
-		name:   ls,
-		length: len(ls),
-		joined: clean(ls),
-		tokens: tokenize(ls),
+		toParse: ls,
+		length:  len(ls),
+		joined:  clean(ls),
+		tokens:  tokenize(ls),
 	}
 }
 
 func (p *parser) parseMediaType() {
-	for _, tokens := range [][]string{
-		p.targetPath.tokens,
-		p.sourcePath.tokens,
-	} {
-		for _, s := range tokens {
-			if mt, ok := mediaTypes[s]; ok {
-				p.result.MediaType = mt
-				return
-			}
+	for _, s := range p.parseData.tokens {
+		if mt, ok := mediaTypes[s]; ok {
+			p.result.MediaType = mt
+			return
 		}
 	}
 	if episodeRegEx.MatchString(p.parseData.joined) && seasonRegEx.MatchString(p.parseData.joined) {
 		p.result.MediaType = MediaTypeTV
 	} else {
+		for _, r := range tvAlternativeRegExList {
+			if r.MatchString(p.parseData.toParse) {
+				p.result.MediaType = MediaTypeTV
+				return
+			}
+		}
 		p.result.MediaType = MediaTypeMovie
 	}
 }
@@ -213,7 +193,7 @@ func (p *parser) parseSeasonAndEpisode() {
 		p.result.mergeIn(r)
 	}
 	if p.result.Episode1 == 0 || p.result.Season == 0 {
-		r := getBestResultFromRxpList(fallbackRegExList, p.parseData.name)
+		r := getBestResultFromRxpList(tvAlternativeRegExList, p.parseData.toParse)
 		if r.score() > 0 {
 			p.result.Season = r.Season
 			p.result.Episode1 = r.Episode1

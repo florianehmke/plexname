@@ -15,7 +15,7 @@ import (
 )
 
 type Renamer struct {
-	args Args
+	args Parameters
 
 	searcher search.Searcher
 	fs       fs.FileSystem
@@ -23,7 +23,7 @@ type Renamer struct {
 	files []fileInfo
 }
 
-func New(args Args, searcher search.Searcher, fs fs.FileSystem) *Renamer {
+func New(args Parameters, searcher search.Searcher, fs fs.FileSystem) *Renamer {
 	return &Renamer{
 		args:     args,
 		searcher: searcher,
@@ -38,6 +38,23 @@ type fileInfo struct {
 
 	newPath     string
 	newFilePath string
+}
+
+func (r *Renamer) parse(source, target string) parser.Result {
+	srcPath, srcFile := filepath.Split(source)
+	_, srcDir := filepath.Split(strings.TrimRight(srcPath, "/"))
+	srcDirAndFile := srcDir + "/" + srcFile
+
+	var toParse string
+	if r.args.OnlyFile {
+		toParse = srcFile
+	} else if r.args.OnlyDir {
+		toParse = srcDir
+	} else {
+		toParse = srcDirAndFile
+	}
+
+	return parser.Parse(toParse, r.args.Overrides)
 }
 
 func (r *Renamer) Run() error {
@@ -85,14 +102,14 @@ func (r *Renamer) collectNewPaths() error {
 	var files []fileInfo
 	for _, f := range r.files {
 		log.Info(fmt.Sprintf("Processing: %s", f.currentFilePath))
-		pr := parser.Parse(f.currentFilePath, f.currentFilePath, r.args.OnlyFile, r.args.OnlyDir, r.args.Overrides)
+		pr := r.parse(f.currentFilePath, f.currentFilePath)
 		sr, err := r.search(pr)
 
 		if err != nil {
 			return fmt.Errorf("search for %s failed: %v", f.currentRelativeFilePath, err)
 		}
 
-		plexName, err := plexName(pr, &sr)
+		plexName, err := plexName(pr, sr)
 		if err != nil {
 			return fmt.Errorf("could not get a plex name for %s: %v", f.currentRelativeFilePath, err)
 		}
@@ -139,13 +156,13 @@ func (r *Renamer) moveAndRename() error {
 func (r *Renamer) runFile() error {
 	log.Info(fmt.Sprintf("Processing: %s", r.args.SourcePath))
 	dir, file := filepath.Split(r.args.SourcePath)
-	pr := parser.Parse(file, file, r.args.OnlyFile, r.args.OnlyDir, r.args.Overrides)
+	pr := r.parse(file, file)
 	sr, err := r.search(pr)
 	if err != nil {
 		return fmt.Errorf("search for %s failed: %v", file, err)
 	}
 
-	plexName, err := plexName(pr, &sr)
+	plexName, err := plexName(pr, sr)
 	if err != nil {
 		return fmt.Errorf("could not get a plex name for %s: %v", r.args.SourcePath, err)
 	}
@@ -169,7 +186,7 @@ func (r *Renamer) runFile() error {
 	return r.move(r.args.SourcePath, newFilePath)
 }
 
-func plexName(pr *parser.Result, sr *search.Result) (string, error) {
+func plexName(pr parser.Result, sr search.Result) (string, error) {
 	year := pr.Year
 	if year == 0 {
 		year = sr.Year
@@ -186,7 +203,7 @@ func plexName(pr *parser.Result, sr *search.Result) (string, error) {
 	return fmt.Sprintf("%s (%d)", sr.Title, year), nil
 }
 
-func (r *Renamer) search(pr *parser.Result) (search.Result, error) {
+func (r *Renamer) search(pr parser.Result) (search.Result, error) {
 	if pr.IsMovie() {
 		return r.searcher.SearchMovie(search.Query{Title: pr.Title, Year: pr.Year})
 	}

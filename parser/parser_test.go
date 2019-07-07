@@ -7,114 +7,110 @@ import (
 )
 
 type parserTest struct {
-	source       string
-	target       string
-	onlyFile     bool
-	onlyDir      bool
+	toParse      string
 	expectations parser.Result
 }
 
 var parserTests = []parserTest{
 	{
-		source:       "/some/dir/Some Title",
+		toParse:      "Some Title",
 		expectations: parser.Result{},
 	},
 	{
-		source:       "/some/dir/Some Title HDTV",
+		toParse:      "Some Title HDTV",
 		expectations: parser.Result{Source: parser.HDTV},
 	},
 	{
-		source:       "/some/dir/Some Title PDTV",
+		toParse:      "Some Title PDTV",
 		expectations: parser.Result{Source: parser.PDTV},
 	},
 	{
-		source:       "/some/dir/Some Title SDTV",
+		toParse:      "Some Title SDTV",
 		expectations: parser.Result{Source: parser.SDTV},
 	},
 	{
-		source:       "/some/dir/Some Title TVRip",
+		toParse:      "Some Title TVRip",
 		expectations: parser.Result{Source: parser.TV},
 	},
 	{
-		source:       "/some/dir/Some Title BD",
+		toParse:      "Some Title BD",
 		expectations: parser.Result{Source: parser.BluRay},
 	},
 	{
-		source:       "/some/dir/Some Title BR-Rip",
+		toParse:      "Some Title BR-Rip",
 		expectations: parser.Result{Source: parser.BluRay},
 	},
 	{
-		source:       "/some/dir/Some Title Blu-Ray",
+		toParse:      "Some Title Blu-Ray",
 		expectations: parser.Result{Source: parser.BluRay},
 	},
 	{
-		source:       "/some/dir/Some Title DVD",
+		toParse:      "Some Title DVD",
 		expectations: parser.Result{Source: parser.DVD},
 	},
 	{
-		source:       "/some/dir/Some Title.avi 720p",
+		toParse:      "Some Title.avi 720p",
 		expectations: parser.Result{Resolution: parser.R720},
 	},
 	{
-		source:       "/some/dir/Some Title.avi 720p webdl",
+		toParse:      "Some Title.avi 720p webdl",
 		expectations: parser.Result{Resolution: parser.R720, Source: parser.WEBDL},
 	},
 	{
-		source:       "/some/dir/1080p web dl of Some Title",
+		toParse:      "1080p web dl of Some Title",
 		expectations: parser.Result{Resolution: parser.R1080, Source: parser.WEBDL},
 	},
 	{
-		source:       "/some/dir/1080p.web-dl.of.A.Movie",
+		toParse:      "1080p.web-dl.of.A.Movie",
 		expectations: parser.Result{Resolution: parser.R1080, Source: parser.WEBDL},
 	},
 	{
-		source:       "/some/dir/Some Title repack",
+		toParse:      "Some Title repack",
 		expectations: parser.Result{Proper: parser.True},
 	},
 	{
-		source:       "/some/dir/Some.WEB-DL-HUNDUB.1080P",
+		toParse:      "Some.WEB-DL-HUNDUB.1080P",
 		expectations: parser.Result{Resolution: parser.R1080, Source: parser.WEBDL, Language: parser.Hungarian},
 	},
 	{
-		source:       "/some/dir/Some.Title.2012.Remux",
-		onlyFile:     true,
+		toParse:      "Some.Title.2012.Remux",
 		expectations: parser.Result{Year: 2012, Remux: parser.True, Title: "some title"},
 	},
 	{
-		source:       "/some/dir/Some.Title.S01E02",
+		toParse:      "Some.Title.S01E02",
 		expectations: parser.Result{Season: 1, Episode1: 2},
 	},
 	{
-		source:       "/some/dir/Some.Title.WEB-DL",
+		toParse:      "Some.Title.WEB-DL",
 		expectations: parser.Result{Source: parser.WEBDL},
 	},
 	{
-		source:       "/some/dir/Some.Title.webrip",
+		toParse:      "Some.Title.webrip",
 		expectations: parser.Result{Source: parser.WEBRip},
 	},
 	{
-		source:       "/some/dir/Some.Title.WEB-DL.DL",
+		toParse:      "Some.Title.WEB-DL.DL",
 		expectations: parser.Result{Source: parser.WEBDL, DualLanguage: parser.True},
 	},
 	{
-		source:       "/some/dir/Some.Title.DL",
+		toParse:      "Some.Title.DL",
 		expectations: parser.Result{DualLanguage: parser.True},
 	},
 	{
-		source:       "/some/dir/Some.Title.E01E02",
+		toParse:      "Some.Title.E01E02",
 		expectations: parser.Result{Episode1: 1, Episode2: 2},
 	},
 }
 
 func TestParse(t *testing.T) {
 	for _, test := range parserTests {
-		t.Logf("Testing title: %s", test.source)
-		got := parser.Parse(test.source, test.source, test.onlyFile, test.onlyDir, parser.Result{})
-		compareResult(t, &test.expectations, got)
+		t.Logf("Testing string: %s", test.toParse)
+		got := parser.Parse(test.toParse, parser.Result{})
+		compareResult(t, test.expectations, got)
 	}
 }
 
-func compareResult(t *testing.T, expected *parser.Result, got *parser.Result) {
+func compareResult(t *testing.T, expected parser.Result, got parser.Result) {
 	if expected.Resolution != got.Resolution {
 		t.Errorf("expected resolution=%s, got resolution=%s", expected.Resolution.String(), got.Resolution.String())
 	}
@@ -164,8 +160,8 @@ func TestOverride(t *testing.T) {
 		Proper:       parser.False,
 		DualLanguage: parser.True,
 	}
-	result := parser.Parse("1080p web dl of Some Title", "/dev/null", false, false, overrides)
-	if overrides != *result {
+	result := parser.Parse("1080p web dl of Some Title", overrides)
+	if overrides != result {
 		t.Errorf("expected overrides to have an effect")
 	}
 }

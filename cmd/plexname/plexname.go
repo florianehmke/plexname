@@ -18,7 +18,7 @@ import (
 func main() {
 	flag.Usage = usage
 
-	arguments := renamer.GetArgsFromFlags()
+	arguments := renamer.GetParametersFromFlags()
 	r := renamer.New(
 		arguments,
 		search.NewSearcher(
