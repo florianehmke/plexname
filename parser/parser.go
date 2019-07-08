@@ -14,7 +14,6 @@ func Parse(s string, overrides Result) Result {
 		result:    Result{},
 	}
 
-	p.parseMediaType()
 	p.parseTitle()
 	p.parseYear()
 	p.parseResolution()
@@ -24,6 +23,10 @@ func Parse(s string, overrides Result) Result {
 	p.parseRemux()
 	p.parseProper()
 	p.parseSeasonAndEpisode()
+	p.parseSpecial()
+
+	p.doPlausibilityCheck()
+	p.setMediaType()
 
 	p.result.mergeIn(overrides)
 	return p.result
@@ -206,6 +209,39 @@ func (p *parser) parseSeasonAndEpisode() {
 			p.result.Episode1 = r.Episode1
 			p.result.Episode2 = r.Episode2
 		}
+	}
+}
+
+func (p *parser) parseSpecial() {
+	specials := map[string]bool{
+		"special":  true,
+		"specials": true,
+		"extra":    true,
+		"extras":   true,
+	}
+
+	for _, t := range p.parseData.tokens {
+		if _, ok := specials[t]; ok {
+			p.result.Special = True
+		}
+	}
+	if strings.Contains(p.parseData.joined, "s00") {
+		p.result.Special = True
+	}
+}
+
+func (p *parser) doPlausibilityCheck() {
+	// If a season (>0) is present, it can't be a special.
+	if p.result.Season > 0 && p.result.Special == True {
+		p.result.Special = False
+	}
+}
+
+func (p *parser) setMediaType() {
+	if (p.result.Episode1 > 0 && p.result.Season > 0) || p.result.Special == True {
+		p.result.MediaType = MediaTypeTV
+	} else {
+		p.result.MediaType = MediaTypeMovie
 	}
 }
 

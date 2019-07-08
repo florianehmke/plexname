@@ -123,6 +123,15 @@ var tests = []testFixture{
 		expectedNewPath:     "../tests/fixtures/tv-long-season-folder-name/Awesome Show (2000)/Season 01/",
 		tvdbResponse:        []tvdb.SearchResult{{Title: "Awesome Show", FirstAired: "2000-01-01"}},
 	},
+	{
+		Parameters: renamer.Parameters{
+			SourcePath: "../tests/fixtures/tv-special",
+		},
+		expectedOldFilePath: "../tests/fixtures/tv-special/tv show title/specials/Special E01 German.mkv",
+		expectedNewFilePath: "../tests/fixtures/tv-special/Awesome Show/Season 00/Awesome Show - S00E01 - German.mkv",
+		expectedNewPath:     "../tests/fixtures/tv-special/Awesome Show/Season 00/",
+		tvdbResponse:        []tvdb.SearchResult{{Title: "Awesome Show"}},
+	},
 }
 
 func TestFixtures(t *testing.T) {

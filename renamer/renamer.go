@@ -134,7 +134,7 @@ func (r *Renamer) collectNewPaths() error {
 			// See: https://support.plex.tv/articles/naming-and-organizing-your-tv-show-files/
 			extension := strings.ToLower(filepath.Ext(f.fileName()))
 			versionInfo := pr.VersionInfo()
-			tvInfo := joinNonEmpty("", toSeasonString(pr.Season), toEpisodeString(pr.Episode1), toEpisodeString(pr.Episode2))
+			tvInfo := joinNonEmpty("", toSeasonString(pr.Season, pr.Special), toEpisodeString(pr.Episode1), toEpisodeString(pr.Episode2))
 			fileName := joinNonEmpty(" - ", plexName, tvInfo, versionInfo)
 			f.newFilePath = f.newPath + "/" + fileName + extension
 		}
@@ -178,7 +178,7 @@ func (r *Renamer) runFile() error {
 	if pr.IsTV() {
 		extension := strings.ToLower(filepath.Ext(file))
 		versionInfo := pr.VersionInfo()
-		tvInfo := joinNonEmpty("", toSeasonString(pr.Season), toEpisodeString(pr.Episode1), toEpisodeString(pr.Episode2))
+		tvInfo := joinNonEmpty("", toSeasonString(pr.Season, pr.Special), toEpisodeString(pr.Episode1), toEpisodeString(pr.Episode2))
 		fileName := joinNonEmpty(" - ", plexName, tvInfo, versionInfo)
 		newFilePath = dir + fileName + extension
 	}
@@ -262,14 +262,14 @@ func (r *Renamer) skipBasedOnExtension(s string) bool {
 }
 
 func toEpisodeString(ep int) string {
-	if ep != 0 {
+	if ep > 0 {
 		return fmt.Sprintf("E%02d", ep)
 	}
 	return ""
 }
 
-func toSeasonString(s int) string {
-	if s != 0 {
+func toSeasonString(s int, special parser.ParseBool) string {
+	if s > 0 || special == parser.True {
 		return fmt.Sprintf("S%02d", s)
 	}
 	return ""

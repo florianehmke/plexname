@@ -21,6 +21,7 @@ type Result struct {
 	Season   int
 	Episode1 int
 	Episode2 int
+	Special  ParseBool
 
 	Resolution   Resolution
 	Source       Source
@@ -93,6 +94,9 @@ func (r *Result) score() int {
 	if r.DualLanguage != Unknown {
 		score += 1
 	}
+	if r.Special != Unknown {
+		score += 1
+	}
 	return score
 }
 
@@ -132,5 +136,8 @@ func (r *Result) mergeIn(other Result) {
 	}
 	if other.DualLanguage != Unknown {
 		r.DualLanguage = other.DualLanguage
+	}
+	if other.Special != Unknown {
+		r.Special = other.Special
 	}
 }
