@@ -52,7 +52,7 @@ func (r *Result) VersionInfo() string {
 	if r.Source != SourceNA {
 		tokens = append(tokens, r.Source.String())
 	}
-	if r.Remux != True {
+	if r.Remux == True {
 		tokens = append(tokens, "Remux")
 	}
 	return strings.Join(tokens, ".")
