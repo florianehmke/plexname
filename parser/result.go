@@ -46,13 +46,13 @@ func (r *Result) VersionInfo() string {
 	if r.Resolution != ResNA {
 		tokens = append(tokens, r.Resolution.String())
 	}
-	if r.DualLanguage != Unknown {
+	if r.DualLanguage == True {
 		tokens = append(tokens, "DL")
 	}
 	if r.Source != SourceNA {
 		tokens = append(tokens, r.Source.String())
 	}
-	if r.Remux != Unknown {
+	if r.Remux != True {
 		tokens = append(tokens, "Remux")
 	}
 	return strings.Join(tokens, ".")
