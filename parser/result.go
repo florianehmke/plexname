@@ -1,9 +1,5 @@
 package parser
 
-import (
-	"strings"
-)
-
 type ParseBool int
 
 const (
@@ -37,26 +33,6 @@ func (r *Result) IsMovie() bool {
 
 func (r *Result) IsTV() bool {
 	return r.MediaType == MediaTypeTV
-}
-
-func (r *Result) VersionInfo() string {
-	tokens := []string{}
-	if r.Language != LangNA {
-		tokens = append(tokens, r.Language.String())
-	}
-	if r.Resolution != ResNA {
-		tokens = append(tokens, r.Resolution.String())
-	}
-	if r.DualLanguage == True {
-		tokens = append(tokens, "DL")
-	}
-	if r.Source != SourceNA {
-		tokens = append(tokens, r.Source.String())
-	}
-	if r.Remux == True {
-		tokens = append(tokens, "Remux")
-	}
-	return strings.Join(tokens, ".")
 }
 
 func (r *Result) score() int {

@@ -121,7 +121,7 @@ func (r *Renamer) collectNewPaths() error {
 			// .. and the filename inside of that directory.
 			// See: https://support.plex.tv/articles/200381043-multi-version-movies/
 			extension := strings.ToLower(filepath.Ext(f.fileName()))
-			versionInfo := pr.VersionInfo()
+			versionInfo := versionInfo(pr)
 			fileName := joinNonEmpty(" - ", plexName, versionInfo)
 			f.newFilePath = f.newPath + "/" + fileName + extension
 		}
@@ -133,8 +133,8 @@ func (r *Renamer) collectNewPaths() error {
 			// .. and the episode filename inside of that directory.
 			// See: https://support.plex.tv/articles/naming-and-organizing-your-tv-show-files/
 			extension := strings.ToLower(filepath.Ext(f.fileName()))
-			versionInfo := pr.VersionInfo()
-			tvInfo := joinNonEmpty("", toSeasonString(pr.Season, pr.Special), toEpisodeString(pr.Episode1), toEpisodeString(pr.Episode2))
+			versionInfo := versionInfo(pr)
+			tvInfo := tvInfo(pr)
 			fileName := joinNonEmpty(" - ", plexName, tvInfo, versionInfo)
 			f.newFilePath = f.newPath + "/" + fileName + extension
 		}
@@ -170,15 +170,15 @@ func (r *Renamer) runFile() error {
 	var newFilePath string
 	if pr.IsMovie() {
 		extension := strings.ToLower(filepath.Ext(file))
-		versionInfo := pr.VersionInfo()
+		versionInfo := versionInfo(pr)
 		fileName := joinNonEmpty(" - ", plexName, versionInfo)
 		newFilePath = dir + fileName + extension
 	}
 
 	if pr.IsTV() {
 		extension := strings.ToLower(filepath.Ext(file))
-		versionInfo := pr.VersionInfo()
-		tvInfo := joinNonEmpty("", toSeasonString(pr.Season, pr.Special), toEpisodeString(pr.Episode1), toEpisodeString(pr.Episode2))
+		versionInfo := versionInfo(pr)
+		tvInfo := tvInfo(pr)
 		fileName := joinNonEmpty(" - ", plexName, tvInfo, versionInfo)
 		newFilePath = dir + fileName + extension
 	}
@@ -237,6 +237,7 @@ func (r *Renamer) move(source, target string) error {
 		return fmt.Errorf("move of %s to %s failed: %v", fileName, osNewDir, err)
 	}
 
+	// Log stuff..
 	logSource := strings.TrimPrefix(source, r.params.SourcePath)
 	logTarget := strings.TrimPrefix(target, r.params.TargetPath)
 	if logSource == "" || logTarget == "" {
@@ -283,4 +284,32 @@ func joinNonEmpty(sep string, slist ...string) string {
 		}
 	}
 	return strings.Join(slice, sep)
+}
+
+func tvInfo(pr parser.Result) string {
+	return joinNonEmpty("",
+		toSeasonString(pr.Season, pr.Special),
+		toEpisodeString(pr.Episode1),
+		toEpisodeString(pr.Episode2),
+	)
+}
+
+func versionInfo(pr parser.Result) string {
+	tokens := []string{}
+	if pr.Language != parser.LangNA {
+		tokens = append(tokens, pr.Language.String())
+	}
+	if pr.Resolution != parser.ResNA {
+		tokens = append(tokens, pr.Resolution.String())
+	}
+	if pr.DualLanguage == parser.True {
+		tokens = append(tokens, "DL")
+	}
+	if pr.Source != parser.SourceNA {
+		tokens = append(tokens, pr.Source.String())
+	}
+	if pr.Remux == parser.True {
+		tokens = append(tokens, "Remux")
+	}
+	return strings.Join(tokens, ".")
 }
