@@ -137,6 +137,9 @@ func (p *parser) parseLanguage() {
 		}
 	}
 	for k, lang := range langMap {
+		if len(k) < 5 {
+			continue
+		}
 		if strings.Contains(p.parseData.joined, k) {
 			p.result.Language = lang
 		}
