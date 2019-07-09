@@ -115,6 +115,15 @@ var parserTests = []parserTest{
 			Episode1:     1,
 		},
 	},
+	{
+		toParse: "/Some.Title.S22.1080p.WEB-DL/Some.Title.S22E01.1080p.WEB-DL.mkv",
+		expectations: parser.Result{
+			Season:     22,
+			Resolution: parser.R1080,
+			Source:     parser.WEBDL,
+			Episode1:   1,
+		},
+	},
 }
 
 func TestParse(t *testing.T) {

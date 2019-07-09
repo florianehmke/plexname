@@ -149,9 +149,9 @@ func (p *parser) parseLanguage() {
 func (p *parser) parseDualLanguage() {
 	for _, t := range p.parseData.tokens {
 		if t == "dl" {
-			count := strings.Count(p.parseData.joined, "dl")
-			webDL := strings.Contains(p.parseData.joined, "webdl")
-			if (!webDL && count == 1) || count > 1 {
+			dlCount := strings.Count(p.parseData.joined, "dl")
+			webDLCount := strings.Count(p.parseData.joined, "webdl")
+			if dlCount > webDLCount {
 				p.result.DualLanguage = True
 			}
 		}
