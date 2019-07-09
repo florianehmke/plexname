@@ -45,6 +45,8 @@ func (r *Renamer) parse(source, target string) parser.Result {
 	_, srcDir := filepath.Split(strings.TrimRight(srcPath, "/"))
 	srcDirAndFile := srcDir + "/" + srcFile
 
+	// TODO guess media type
+
 	var toParse string
 	if r.params.OnlyFile {
 		toParse = srcFile
@@ -102,9 +104,9 @@ func (r *Renamer) collectNewPaths() error {
 	var files []fileInfo
 	for _, f := range r.files {
 		log.Info(fmt.Sprintf("Processing: %s", f.currentFilePath))
-		pr := r.parse(f.currentFilePath, f.currentFilePath)
-		sr, err := r.search(pr)
+		pr := r.parse(f.currentFilePath, r.params.TargetPath)
 
+		sr, err := r.search(pr)
 		if err != nil {
 			return fmt.Errorf("search for %s failed: %v", f.currentRelativeFilePath, err)
 		}
@@ -114,30 +116,18 @@ func (r *Renamer) collectNewPaths() error {
 			return fmt.Errorf("could not get a plex name for %s: %v", f.currentRelativeFilePath, err)
 		}
 
-		if pr.IsMovie() {
-			// The new directory..
-			f.newPath = r.params.TargetPath + "/" + plexName
-
-			// .. and the filename inside of that directory.
-			// See: https://support.plex.tv/articles/200381043-multi-version-movies/
-			extension := strings.ToLower(filepath.Ext(f.fileName()))
-			versionInfo := versionInfo(pr)
-			fileName := joinNonEmpty(" - ", plexName, versionInfo)
-			f.newFilePath = f.newPath + "/" + fileName + extension
+		newPath, err := newDirectoryPath(r.params.TargetPath, plexName, pr)
+		if err != nil {
+			return fmt.Errorf("could not create directory path for %s: %v", f.currentRelativeFilePath, err)
 		}
+		f.newPath = newPath
 
-		if pr.IsTV() {
-			// The new directory + Season Folder ...
-			f.newPath = fmt.Sprintf("%s/%s/Season %02d", r.params.TargetPath, plexName, pr.Season)
-
-			// .. and the episode filename inside of that directory.
-			// See: https://support.plex.tv/articles/naming-and-organizing-your-tv-show-files/
-			extension := strings.ToLower(filepath.Ext(f.fileName()))
-			versionInfo := versionInfo(pr)
-			tvInfo := tvInfo(pr)
-			fileName := joinNonEmpty(" - ", plexName, tvInfo, versionInfo)
-			f.newFilePath = f.newPath + "/" + fileName + extension
+		newFilePath, err := newFilePath(newPath, f.fileName(), plexName, pr)
+		if err != nil {
+			return fmt.Errorf("could not create file path for %s: %v", f.currentRelativeFilePath, err)
 		}
+		f.newFilePath = newFilePath
+
 		files = append(files, f)
 	}
 	r.files = files
@@ -156,7 +146,9 @@ func (r *Renamer) moveAndRename() error {
 func (r *Renamer) runFile() error {
 	log.Info(fmt.Sprintf("Processing: %s", r.params.SourcePath))
 	dir, file := filepath.Split(r.params.SourcePath)
+
 	pr := r.parse(file, file)
+
 	sr, err := r.search(pr)
 	if err != nil {
 		return fmt.Errorf("search for %s failed: %v", file, err)
@@ -167,20 +159,9 @@ func (r *Renamer) runFile() error {
 		return fmt.Errorf("could not get a plex name for %s: %v", r.params.SourcePath, err)
 	}
 
-	var newFilePath string
-	if pr.IsMovie() {
-		extension := strings.ToLower(filepath.Ext(file))
-		versionInfo := versionInfo(pr)
-		fileName := joinNonEmpty(" - ", plexName, versionInfo)
-		newFilePath = dir + fileName + extension
-	}
-
-	if pr.IsTV() {
-		extension := strings.ToLower(filepath.Ext(file))
-		versionInfo := versionInfo(pr)
-		tvInfo := tvInfo(pr)
-		fileName := joinNonEmpty(" - ", plexName, tvInfo, versionInfo)
-		newFilePath = dir + fileName + extension
+	newFilePath, err := newFilePath(dir, file, plexName, pr)
+	if err != nil {
+		return fmt.Errorf("could not create file path for %s: %v", r.params.SourcePath, err)
 	}
 
 	return r.move(r.params.SourcePath, newFilePath)
@@ -201,6 +182,33 @@ func plexName(pr parser.Result, sr search.Result) (string, error) {
 		}
 	}
 	return fmt.Sprintf("%s (%d)", sr.Title, year), nil
+}
+
+func newFilePath(base string, oldFileName string, plexName string, pr parser.Result) (string, error) {
+	base = strings.TrimRight(base, "/")
+	extension := strings.ToLower(filepath.Ext(oldFileName))
+	versionInfo := versionInfo(pr)
+	if pr.IsTV() {
+		tvInfo := tvInfo(pr)
+		fileName := joinNonEmpty(" - ", plexName, tvInfo, versionInfo)
+		return base + "/" + fileName + extension, nil
+	}
+	if pr.IsMovie() {
+		fileName := joinNonEmpty(" - ", plexName, versionInfo)
+		return base + "/" + fileName + extension, nil
+	}
+	return "", errors.New("can't create file path for unknown media type")
+}
+
+func newDirectoryPath(base string, plexName string, pr parser.Result) (string, error) {
+	base = strings.TrimRight(base, "/")
+	if pr.IsTV() {
+		return fmt.Sprintf("%s/%s/Season %02d", base, plexName, pr.Season), nil
+	}
+	if pr.IsMovie() {
+		return base + "/" + plexName, nil
+	}
+	return "", errors.New("can't create directory path for unknown media type")
 }
 
 func (r *Renamer) search(pr parser.Result) (search.Result, error) {
