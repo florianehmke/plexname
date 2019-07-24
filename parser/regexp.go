@@ -1,15 +1,53 @@
 package parser
 
 import (
+	"fmt"
 	"regexp"
 	"strconv"
 )
 
+type regex struct {
+	full *regexp.Regexp
+	sub  *regexp.Regexp
+}
+
+type tvrxp struct {
+	season   regex // ..S01..
+	episode  regex // ..E01..
+	complete regex // ..S01E02..
+}
+
+func (r *tvrxp) matchFull(s string) bool {
+	return r.season.full.MatchString(s) || r.episode.full.MatchString(s) || r.complete.full.MatchString(s)
+}
+
+func mustCompile(str string) regex {
+	return regex{
+		full: regexp.MustCompile(fmt.Sprintf("^%s$", str)),
+		sub:  regexp.MustCompile(str),
+	}
+}
+
 var (
-	yearRegEx        = regexp.MustCompile(`(?P<year>(19|20)\d{2})`)
-	seasonRegEx      = regexp.MustCompile(`s(?P<season>\d{1,2})`)
-	episodeRegEx     = regexp.MustCompile(`e(?P<episode1>\d{2,4})`)
-	dualEpisodeRegEx = regexp.MustCompile(`e(?P<episode1>\d{2,4})e(?P<episode2>\d{2,4})`)
+	seasonPattern   = `s(?P<season>\d{1,2})`
+	episode1Pattern = `e(?P<episode1>\d{2,4})`
+	episode2Pattern = `e(?P<episode2>\d{2,4})`
+
+	yearRegEx    = mustCompile(`(?P<year>(19|20)\d{2})`)
+	seasonRegEx  = mustCompile(seasonPattern)
+	episodeRegEx = mustCompile(episode1Pattern)
+
+	singleEpisode = tvrxp{
+		season:   mustCompile(seasonPattern),
+		episode:  mustCompile(episode1Pattern),
+		complete: mustCompile(seasonPattern + episode1Pattern),
+	}
+
+	dualEpisode = tvrxp{
+		season:   mustCompile(seasonPattern),
+		episode:  mustCompile(episode1Pattern + episode2Pattern),
+		complete: mustCompile(seasonPattern + episode1Pattern + episode2Pattern),
+	}
 
 	tvAlternativeRegExList = []*regexp.Regexp{
 		// Show Title S01/1 - Title.mkv

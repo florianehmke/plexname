@@ -77,6 +77,10 @@ var parserTests = []parserTest{
 		expectations: parser.Result{Year: 2012, Remux: parser.True, Title: "some title"},
 	},
 	{
+		toParse:      "Some.Title.S04E01",
+		expectations: parser.Result{Season: 4, Episode1: 1, Title: "some title"},
+	},
+	{
 		toParse:      "Some.Title.S01E02",
 		expectations: parser.Result{Season: 1, Episode1: 2},
 	},
@@ -99,6 +103,26 @@ var parserTests = []parserTest{
 	{
 		toParse:      "Some.Title.E01E02",
 		expectations: parser.Result{Episode1: 1, Episode2: 2},
+	},
+	{
+		toParse: "Some.Title.S04E01.GERMAN.DL.1080p.BluRay/the200-1080p.mkv",
+		expectations: parser.Result{
+			Season:       4,
+			Language:     parser.German,
+			DualLanguage: parser.True,
+			Resolution:   parser.R1080,
+			Source:       parser.BluRay,
+			Episode1:     1,
+		},
+	},
+	{
+		toParse: "/Some.Title.S22.1080p.WEB-DL/Some.Title.S22E01.1080p.WEB-DL.mkv",
+		expectations: parser.Result{
+			Season:     22,
+			Resolution: parser.R1080,
+			Source:     parser.WEBDL,
+			Episode1:   1,
+		},
 	},
 }
 

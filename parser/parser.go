@@ -14,7 +14,6 @@ func Parse(s string, overrides Result) Result {
 		result:    Result{},
 	}
 
-	p.parseMediaType()
 	p.parseTitle()
 	p.parseYear()
 	p.parseResolution()
@@ -24,6 +23,10 @@ func Parse(s string, overrides Result) Result {
 	p.parseRemux()
 	p.parseProper()
 	p.parseSeasonAndEpisode()
+	p.parseSpecial()
+
+	p.doPlausibilityCheck()
+	p.setMediaType()
 
 	p.result.mergeIn(overrides)
 	return p.result
@@ -61,7 +64,7 @@ func (p *parser) parseMediaType() {
 			return
 		}
 	}
-	if episodeRegEx.MatchString(p.parseData.joined) && seasonRegEx.MatchString(p.parseData.joined) {
+	if episodeRegEx.sub.MatchString(p.parseData.joined) && seasonRegEx.sub.MatchString(p.parseData.joined) {
 		p.result.MediaType = MediaTypeTV
 	} else {
 		for _, r := range tvAlternativeRegExList {
@@ -77,7 +80,7 @@ func (p *parser) parseMediaType() {
 func (p *parser) parseTitle() {
 	var titleTokens []string
 	for _, t := range p.parseData.tokens {
-		if yearRegEx.MatchString(t) || seasonRegEx.MatchString(t) || episodeRegEx.MatchString(t) {
+		if yearRegEx.full.MatchString(t) || singleEpisode.matchFull(t) || dualEpisode.matchFull(t) {
 			break
 		}
 		titleTokens = append(titleTokens, t)
@@ -87,7 +90,7 @@ func (p *parser) parseTitle() {
 
 func (p *parser) parseYear() {
 	for _, t := range p.parseData.tokens {
-		if yearRegEx.MatchString(t) {
+		if yearRegEx.full.MatchString(t) {
 			year, err := strconv.Atoi(t)
 			if err == nil {
 				p.result.Year = year
@@ -134,6 +137,9 @@ func (p *parser) parseLanguage() {
 		}
 	}
 	for k, lang := range langMap {
+		if len(k) < 5 {
+			continue
+		}
 		if strings.Contains(p.parseData.joined, k) {
 			p.result.Language = lang
 		}
@@ -143,9 +149,9 @@ func (p *parser) parseLanguage() {
 func (p *parser) parseDualLanguage() {
 	for _, t := range p.parseData.tokens {
 		if t == "dl" {
-			count := strings.Count(p.parseData.joined, "dl")
-			webDL := strings.Contains(p.parseData.joined, "webdl")
-			if (!webDL && count == 1) || count > 1 {
+			dlCount := strings.Count(p.parseData.joined, "dl")
+			webDLCount := strings.Count(p.parseData.joined, "webdl")
+			if dlCount > webDLCount {
 				p.result.DualLanguage = True
 			}
 		}
@@ -185,10 +191,17 @@ func (p *parser) parseProper() {
 func (p *parser) parseSeasonAndEpisode() {
 	for _, t := range p.parseData.tokens {
 		var r Result
-		if dualEpisodeRegEx.MatchString(t) {
-			r = populateResultFromRxpList([]*regexp.Regexp{seasonRegEx, dualEpisodeRegEx}, t)
+		if dualEpisode.episode.sub.MatchString(t) {
+			r = populateResultFromRxpList([]*regexp.Regexp{
+				dualEpisode.episode.full,
+				dualEpisode.complete.full,
+			}, t)
 		} else {
-			r = populateResultFromRxpList([]*regexp.Regexp{seasonRegEx, episodeRegEx}, t)
+			r = populateResultFromRxpList([]*regexp.Regexp{
+				singleEpisode.episode.full,
+				singleEpisode.season.full,
+				singleEpisode.complete.full,
+			}, t)
 		}
 		p.result.mergeIn(r)
 	}
@@ -199,6 +212,39 @@ func (p *parser) parseSeasonAndEpisode() {
 			p.result.Episode1 = r.Episode1
 			p.result.Episode2 = r.Episode2
 		}
+	}
+}
+
+func (p *parser) parseSpecial() {
+	specials := map[string]bool{
+		"special":  true,
+		"specials": true,
+		"extra":    true,
+		"extras":   true,
+	}
+
+	for _, t := range p.parseData.tokens {
+		if _, ok := specials[t]; ok {
+			p.result.Special = True
+		}
+	}
+	if strings.Contains(p.parseData.joined, "s00") {
+		p.result.Special = True
+	}
+}
+
+func (p *parser) doPlausibilityCheck() {
+	// If a season (>0) is present, it can't be a special.
+	if p.result.Season > 0 && p.result.Special == True {
+		p.result.Special = False
+	}
+}
+
+func (p *parser) setMediaType() {
+	if (p.result.Episode1 > 0 && p.result.Season > 0) || p.result.Special == True {
+		p.result.MediaType = MediaTypeTV
+	} else {
+		p.result.MediaType = MediaTypeMovie
 	}
 }
 
