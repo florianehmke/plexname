@@ -46,6 +46,7 @@ var (
 		"webdl":     WEBDL,
 		"ituneshd":  WEBDL,
 		"amzn":      WEBDL,
+		"azhd":      WEBDL,
 		"amazonhd":  WEBDL,
 		"netflixhd": WEBDL,
 		"maxdomehd": WEBDL,
