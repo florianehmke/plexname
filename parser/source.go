@@ -49,6 +49,7 @@ var (
 		"azhd":      WEBDL,
 		"amazonhd":  WEBDL,
 		"netflixhd": WEBDL,
+		"nfuhd":     WEBDL,
 		"maxdomehd": WEBDL,
 		"webrip":    WEBRip,
 		"webhd":     WEBRip,
