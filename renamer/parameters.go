@@ -81,10 +81,17 @@ func GetParametersFromFlags() Parameters {
 		flag.Usage()
 		os.Exit(1)
 	}
+
 	var sourcePath, targetPath string
+	var err error
+
 	sourcePath = flag.Arg(0)
 	if flag.NArg() == 1 {
-		targetPath = sourcePath
+		targetPath, err = os.Getwd()
+		if err != nil {
+			flag.Usage()
+			os.Exit(1)
+		}
 	} else {
 		targetPath = flag.Arg(1)
 	}

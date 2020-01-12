@@ -245,14 +245,7 @@ func (r *Renamer) move(source, target string) error {
 		return fmt.Errorf("move of %s to %s failed: %v", fileName, osNewDir, err)
 	}
 
-	// Log stuff..
-	logSource := strings.TrimPrefix(source, r.params.SourcePath)
-	logTarget := strings.TrimPrefix(target, r.params.TargetPath)
-	if logSource == "" || logTarget == "" {
-		logSource = source
-		logTarget = target
-	}
-	log.Info(fmt.Sprintf("Renamed:\nSource: %s\nTarget: %s", logSource, logTarget))
+	log.Info(fmt.Sprintf("Renamed:\nSource: %s\nTarget: %s", osSource, osTarget))
 	return nil
 }
 
