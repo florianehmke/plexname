@@ -25,7 +25,7 @@ func (s *client) requestInitialToken() error {
 	if err != nil {
 		return fmt.Errorf("marshal of request body failed: %v", err)
 	}
-	resp, err := http.Post(BaseURL+authEndpoint, "application/json", bytes.NewBuffer(body))
+	resp, err := http.Post(s.baseURL+authEndpoint, "application/json", bytes.NewBuffer(body))
 	if err != nil {
 		return fmt.Errorf("http post failed: %v", err)
 	}
@@ -37,7 +37,7 @@ func (s *client) requestInitialToken() error {
 }
 
 func (s *client) refreshToken() error {
-	req, err := http.NewRequest("GET", BaseURL+authEndpoint, nil)
+	req, err := http.NewRequest("GET", s.baseURL+authEndpoint, nil)
 	if err != nil {
 		return fmt.Errorf("creation of get request failed: %v", err)
 	}

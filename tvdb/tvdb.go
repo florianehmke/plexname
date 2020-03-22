@@ -15,7 +15,8 @@ const BaseURL = "https://api.thetvdb.com/"
 type client struct {
 	client *http.Client
 
-	apiKey string
+	apiKey  string
+	baseURL string
 
 	token         tokenResponse
 	tokenFromDate time.Time
@@ -28,9 +29,10 @@ type Client interface {
 // New creates a new TMDB client.
 func NewClient(baseURL string, apiKey string) Client {
 	tvdbService := &client{
-		apiKey: apiKey,
-		client: &http.Client{},
-		token:  tokenResponse{},
+		apiKey:  apiKey,
+		baseURL: baseURL,
+		client:  &http.Client{},
+		token:   tokenResponse{},
 	}
 	return tvdbService
 }

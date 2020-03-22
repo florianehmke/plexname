@@ -36,7 +36,7 @@ func (s *client) Search(query string) (*SearchResponse, error) {
 		return nil, fmt.Errorf("jwt token refresh failed: %v", err)
 	}
 
-	reqURL := fmt.Sprintf(BaseURL+searchEndpoint, url.QueryEscape(query))
+	reqURL := fmt.Sprintf(s.baseURL+searchEndpoint, url.QueryEscape(query))
 	req, err := http.NewRequest("GET", reqURL, nil)
 	if err != nil {
 		return nil, fmt.Errorf("creation of get request failed: %v", err)
