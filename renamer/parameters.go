@@ -86,6 +86,12 @@ func GetParametersFromFlags() Parameters {
 	var err error
 
 	sourcePath = flag.Arg(0)
+	sourcePath, err = filepath.Abs(sourcePath)
+	if err != nil {
+		flag.Usage()
+		os.Exit(1)
+	}
+
 	if flag.NArg() == 1 {
 		targetPath, err = os.Getwd()
 		if err != nil {

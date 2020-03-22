@@ -2,6 +2,7 @@ package renamer_test
 
 import (
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/florianehmke/plexname/parser"
@@ -34,11 +35,11 @@ func TestGetParametersFromFlags(t *testing.T) {
 		"some/other/path",
 	}
 	args := renamer.GetParametersFromFlags()
-	if args.SourcePath != "some/path" {
-		t.Error("expected different source path")
+	if !strings.Contains(args.SourcePath, "some/path") {
+		t.Error("expected different source path, got " + args.SourcePath)
 	}
-	if args.TargetPath != "some/other/path" {
-		t.Error("expected different target path")
+	if !strings.Contains(args.TargetPath, "some/other/path") {
+		t.Error("expected different target path, got " + args.TargetPath)
 	}
 	if args.DryRun != true {
 		t.Error("expected different dryRun flag value")

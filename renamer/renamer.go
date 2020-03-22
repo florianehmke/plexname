@@ -33,8 +33,7 @@ func New(args Parameters, searcher search.Searcher, fs fs.FileSystem) *Renamer {
 }
 
 type fileInfo struct {
-	currentFilePath         string
-	currentRelativeFilePath string
+	currentFilePath string
 
 	newPath     string
 	newFilePath string
@@ -88,10 +87,7 @@ func (r *Renamer) collectFiles() error {
 	if err := filepath.Walk(r.params.SourcePath, func(path string, node os.FileInfo, err error) error {
 		if !node.IsDir() {
 			p := filepath.ToSlash(path)
-			r.files = append(r.files, fileInfo{
-				currentFilePath:         p,
-				currentRelativeFilePath: strings.TrimPrefix(p, r.params.SourcePath+"/"),
-			})
+			r.files = append(r.files, fileInfo{currentFilePath: p})
 		}
 		return nil
 	}); err != nil {
@@ -108,23 +104,23 @@ func (r *Renamer) collectNewPaths() error {
 
 		sr, err := r.search(pr)
 		if err != nil {
-			return fmt.Errorf("search for %s failed: %v", f.currentRelativeFilePath, err)
+			return fmt.Errorf("search for %s failed: %v", f.currentFilePath, err)
 		}
 
 		plexName, err := plexName(pr, sr)
 		if err != nil {
-			return fmt.Errorf("could not get a plex name for %s: %v", f.currentRelativeFilePath, err)
+			return fmt.Errorf("could not get a plex name for %s: %v", f.currentFilePath, err)
 		}
 
 		newPath, err := newDirectoryPath(r.params.TargetPath, plexName, pr)
 		if err != nil {
-			return fmt.Errorf("could not create directory path for %s: %v", f.currentRelativeFilePath, err)
+			return fmt.Errorf("could not create directory path for %s: %v", f.currentFilePath, err)
 		}
 		f.newPath = newPath
 
 		newFilePath, err := newFilePath(newPath, f.fileName(), plexName, pr)
 		if err != nil {
-			return fmt.Errorf("could not create file path for %s: %v", f.currentRelativeFilePath, err)
+			return fmt.Errorf("could not create file path for %s: %v", f.currentFilePath, err)
 		}
 		f.newFilePath = newFilePath
 
@@ -222,7 +218,7 @@ func (r *Renamer) search(pr parser.Result) (search.Result, error) {
 }
 
 func (fi *fileInfo) fileName() string {
-	_, fileName := path.Split(fi.currentRelativeFilePath)
+	_, fileName := path.Split(fi.currentFilePath)
 	return fileName
 }
 
