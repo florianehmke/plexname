@@ -1,0 +1,17 @@
+POST https://api.thetvdb.com/login
+Content-Type: application/json
+
+{
+  "apiKey": ""
+}
+
+> {%
+    client.global.set("tvdb_token", response.body.token);
+  %}
+
+###
+
+GET https://api.thetvdb.com/search/series?name=paw%20patrol
+Authorization: Bearer {{tvdb_token}}
+
+###

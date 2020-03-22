@@ -2,10 +2,11 @@ package search
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/florianehmke/plexname/prompt"
 	"github.com/florianehmke/plexname/tmdb"
 	"github.com/florianehmke/plexname/tvdb"
-	"strings"
 )
 
 type Result struct {
@@ -73,9 +74,7 @@ func (s *searcher) SearchTV(query Query) (Result, error) {
 	}
 	var result []Result
 	for _, r := range response.Results {
-		if query.Year == 0 || query.Year == r.Year() {
-			result = append(result, Result{r.Title, r.Year()})
-		}
+		result = append(result, Result{r.Title, r.Year()})
 	}
 	if len(result) == 0 {
 		fmt.Printf("no search result for title '%s'\n", query.Title)
